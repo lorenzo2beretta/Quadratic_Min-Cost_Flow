@@ -3,11 +3,11 @@ import numpy as np
 # TODO: correggi questa descrizione
 ''' ------------ Conjugate Gradient Algorithm -------------
 
-This function implements the conjugate gradient algorithm [Reference: Trefethen,
-Bau, Lecture 38] solving S * x = b for a strucutred symmetric matrix S.
+This function implements the conjugate gradient algorithm [Reference:
+Trefethen, Bau, Lecture 38] solving S * x = b for a strucutred symmetric matrix S.
 
-We demanded the implementation of S * y products to a function multiply since
-we do want to exploit the strucure of S to speed up the iteration time 
+We demanded the implementation of S * y products to a function multiply
+since we do want to exploit the strucure of S to speed up the iteration time 
 complexity.
 
 In the end we applied this techinque to solve quadratic separable Min-Cost Flow
@@ -57,4 +57,5 @@ def conjugate_gradient(edg, d, b, threshold=1e-5):
         beta /= np.dot(r, r)
         p = r + beta * p
 
-        
+    return x
+
