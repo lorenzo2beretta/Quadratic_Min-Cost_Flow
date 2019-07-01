@@ -1,12 +1,14 @@
 import numpy as np
-import scipy as sp 
+import scipy as sp
+from scipy.sparse.linalg import LinearOperator
+ 
 
-def conjugate_gradient(A, b, tol=1e-5):
+def conjugate_gradient(A, b, tol=1e-5, callback=None):
     x = np.zeros(len(b))                 # current approximate solution
     r = np.array(b)                      # current residual value
     p = np.array(b)                      # current update direction
     rr = np.dot(r, r)                    # error squared norm
-
+    
     while np.sqrt(rr) > tol:
         
         Ap = A * p                       # fast matrix-vector product
@@ -20,10 +22,12 @@ def conjugate_gradient(A, b, tol=1e-5):
         beta = rr / rr_old               # step improvement
         p = r + beta * p                 # next update direction
 
+        callback(x)                   
+
     return x
 
 
-def solve(edges, b, threshold=1e-5, algo=conjugate_gradient):
+def solve(edges, b, tol=1e-5, algo=conjugate_gradient):
     
     edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     b = [float(z) for z in b]
@@ -37,15 +41,20 @@ def solve(edges, b, threshold=1e-5, algo=conjugate_gradient):
 
         return res
 
+    itn = 0
+    def callback(xk):
+        nonlocal itn
+        itn += 1
+
     n = len(b)
-    A = sp.sparse.linalg.LinearOperator((n, n), matvec=lin_op)
-    x = algo(A, b, tol=threshold)              # solve A * x = b
+    A = LinearOperator((n, n), matvec=lin_op)   # define x -> A * x
+    x = algo(A, b, tol=tol, callback=callback)  # solve A * x = b
 
     if algo == sp.sparse.linalg.cg:  # off-the-shelf CG nasty signature
         x = x[0]
         
     f = [e[2] * (x[e[1]] - x[e[0]]) for e in edges]  # primal solution
-    return np.array(f)
+    return np.array(f), itn
 
 
 
