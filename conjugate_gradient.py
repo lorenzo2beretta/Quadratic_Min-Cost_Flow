@@ -43,7 +43,7 @@ def multiply(edges, x):
     return res
     
     
-def conjugate_gradient(edges, b, threshold=1e-5):
+def conjugate_gradient(edges, b, threshold=1e-10):
     ''' Uses Conjugate Gradient method to solve the linear system
 
     E^t * D^-1 * E * x = b
@@ -71,6 +71,11 @@ def conjugate_gradient(edges, b, threshold=1e-5):
         x += alpha * p                   # current iterate
         
         beta = np.dot(r, r)
+
+        # TODO: comment
+        print(np.sqrt(beta))  # prints eudclidean norm
+        # print(np.sqrt(np.dot(r, multiply(edges, r))))  # prints S-norm 
+
         if np.sqrt(beta) < threshold:    # stopping criterion
             break
 
