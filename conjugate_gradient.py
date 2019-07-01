@@ -36,7 +36,7 @@ def multiply(edges, x):
     res = np.zeros(len(x))
 
     for e in edges:
-        diff = e[2] * (x[e[0]] - x[e[1]])
+        diff = (x[e[0]] - x[e[1]]) / e[2]
         res[e[0]] += diff
         res[e[1]] -= diff
                 
@@ -55,8 +55,7 @@ def conjugate_gradient(edges, b, threshold=1e-10):
     
     and D = diag(D) is such that D_{i,i} == edges[i][2]
     '''
-    edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
-    
+        
     x = np.zeros(len(b))                 # current approximate solution
     r = np.array([float(z) for z in b])  # current residual value
     p = np.array([float(z) for z in b])  # current update direction
@@ -72,16 +71,25 @@ def conjugate_gradient(edges, b, threshold=1e-10):
         
         beta = np.dot(r, r)
 
-        # TODO: comment
-        print(np.sqrt(beta))  # prints eudclidean norm
+        # TODO: comment ###################################
+        # print(np.sqrt(beta))  # prints eudclidean norm
         # print(np.sqrt(np.dot(r, multiply(edges, r))))  # prints S-norm 
-
+        tmp = np.dot(r, multiply(edges, r))
+        ###################################################
+        
         if np.sqrt(beta) < threshold:    # stopping criterion
             break
 
         r -= alpha * prod                # current error
         
-        beta = np.dot(r, r) / beta       
+        beta = np.dot(r, r) / beta
+        
+        # TODO: comment ##########################
+        # print(beta)
+        tmp1 = np.dot(r, multiply(edges, r))
+        print(np.sqrt(tmp1 / tmp))
+        #########################################
+        
         p = r + beta * p                 # next update direction
 
     f = [ e[2] * (x[e[1]] - x[e[0]]) for e in edges]  # primal solution
