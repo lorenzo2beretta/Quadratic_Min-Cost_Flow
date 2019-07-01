@@ -22,16 +22,16 @@ time coplexity of O(m) per iteration of conjugate gradient.
 '''
 
 def multiply(edges, x):
-# TODO: write better documentation
     ''' This function returns the product 
         
-    E^t * diag(edg[2]) * E * x
+    E^t * D * E * x
 
     where E is the edge-node matrix of a graph whose edges are listed 
-    in edge, that is 
+    in edges, that is 
     
-    E[(i,j)][k] == (j == k) ? 1 : ( (i == k) ? -1 : 0 )
+    E[h][k] == (edges[h][0] == k) ? -1 : ( (edges[h][1] == k) ? 1 : 0 )
     
+    and D = diag(D) is such that D_{i,i} == edges[i][2]
     '''
     res = np.zeros(len(x))
 
@@ -44,31 +44,41 @@ def multiply(edges, x):
     
     
 def conjugate_gradient(edges, b, threshold=1e-5):
-    ''' Iteratively solves the linear system
+    ''' Uses Conjugate Gradient method to solve the linear system
 
-    E^t * diag(d)^-1 * E * y
+    E^t * D^-1 * E * x = b
+
+    where E is the edge-node matrix of a graph whose edges are listed 
+    in edges, that is 
     
+    E[h][k] == (edges[h][0] == k) ? -1 : ( (edges[h][1] == k) ? 1 : 0 )
+    
+    and D = diag(D) is such that D_{i,i} == edges[i][2]
     '''
-    # we employ weights' inverses instead of weights
     edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     
     x = np.zeros(len(b))                 # current approximate solution
     r = np.array([float(z) for z in b])  # current residual value
     p = np.array([float(z) for z in b])  # current update direction
-    beta = np.dot(r, r)
+    beta = np.dot(r, r)                  # error squared norm
 
     while beta != 0:
-        prod = multiply(edges, p)
+        prod = multiply(edges, p)        # fast matrix-vector product
+        
         alpha = np.dot(r, r)
-        alpha /= np.dot(p, prod)
-        x += alpha * p
-        beta = np.dot(r, r)
-        if np.sqrt(beta) < threshold:
-            break
-        r -= alpha * prod
-        beta = np.dot(r, r) / beta
-        p = r + beta * p
+        alpha /= np.dot(p, prod)         # step length
 
-    f = [ e[2] * (x[e[1]] - x[e[0]]) for e in edges]
+        x += alpha * p                   # current iterate
+        
+        beta = np.dot(r, r)
+        if np.sqrt(beta) < threshold:    # stopping criterion
+            break
+
+        r -= alpha * prod                # current error
+        
+        beta = np.dot(r, r) / beta       
+        p = r + beta * p                 # next update direction
+
+    f = [ e[2] * (x[e[1]] - x[e[0]]) for e in edges]  # primal solution
     return f
 
