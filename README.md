@@ -1,6 +1,6 @@
 # Quadratic_Min-Cost_Flow
 
-**This project is under development, please do not trust its content** 
+**This project is under development, please do not trust its content.** 
 
 This report is devoted to the project of "Computational Mathematics for 
 learing and data analysis", prof. Frangioni and Poloni, UniPi 2018/19.
