@@ -50,11 +50,11 @@ def conjugate_gradient(edges, b, threshold=1e-5):
     
     '''
     # we employ weights' inverses instead of weights
-    edges = [(e[0], e[1], 1 / e[2]) for e in edges]
+    edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     
-    x = np.zeros(len(b))   # current approximate solution
-    r = np.array(b)        # current residual value
-    p = np.array(b)        # current update direction
+    x = np.zeros(len(b))                 # current approximate solution
+    r = np.array([float(z) for z in b])  # current residual value
+    p = np.array([float(z) for z in b])  # current update direction
     beta = np.dot(r, r)
 
     while beta != 0:
