@@ -1,5 +1,5 @@
 from cg import solve
-import scipy
+import scipy as sp
 import numpy as np
 
 def read_DIMACS(file_path):
@@ -54,7 +54,7 @@ r = 100
 edges = [(e[0], e[1], np.random.uniform(l, r)) for e in edges]
    
 f1 = solve(edges, b)
-f2 = solve(edges, b, algo=scipy.sparse.linalg.cg)
+f2 = solve(edges, b, algo=sp.sparse.linalg.cg)
 
 err_abs = np.linalg.norm(f1 - f2)
 err_rel = err_abs / np.linalg.norm(f2)
