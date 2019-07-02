@@ -17,12 +17,13 @@ def conjugate_gradient(A, b, tol=1e-5, maxiter=None, callback=None):
     r = np.array(b)                      # current residual value
     p = np.array(b)                      # current update direction
     rr = np.dot(r, r)                    # error squared norm
+    tol *= np.sqrt(rr)
     itn = 0
     info = 0
-    
+
     while np.sqrt(rr) > tol:
 
-        if maxiter and itn > maxiter:    # method not converged
+        if maxiter and itn >= maxiter:   # method not converged
             info = maxiter
             break
         
@@ -73,7 +74,7 @@ def get_primal(edges, dual):
     return np.array(primal)
 
 
-def solve(edges, b, tol=1e-5, algo=conjugate_gradient):
+def solve(edges, b, maxiter=None, tol=1e-5, algo=conjugate_gradient):
     ''' This function solves uncapacited and undirected quadratic 
     separable MCF, equivalent to the solution of the linear system 
     
@@ -93,7 +94,7 @@ def solve(edges, b, tol=1e-5, algo=conjugate_gradient):
         itn += 1
 
     t0 = time.time()
-    x, info = algo(A, b, tol=tol, callback=callback)  # solve A * x = b
+    x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback)
     t1 = time.time()
     tspan = t1 - t0  # measuring elapsed time
 
