@@ -50,7 +50,7 @@ def make_operator(edges, n):
     '''
     edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     
-    def lin_op(x):
+    def matvec(x):
         ''' Fast matrix-vector multiplication exploiting the structure
         of E, achieving O(|A|) time complexity.
         '''
@@ -62,7 +62,7 @@ def make_operator(edges, n):
 
         return res
 
-    A = LinearOperator((n, n), matvec=lin_op)
+    A = LinearOperator((n, n), matvec=matvec)
     return A 
 
 
