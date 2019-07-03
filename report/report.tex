@@ -4,30 +4,84 @@
 \usepackage{graphicx}
 \usepackage{subfig}
 \usepackage{geometry}
-
+\usepackage{bbm}
+\usepackage{amsmath}
+\usepackage{systeme}
 \geometry{a4paper, left=30mm, right=30mm}
 
 \setlength\parindent{0pt}
 
-\title{Conjugate Gradient solves Quadratic Minimum-Cost flow}
+\newcommand{\R}{\mathbbm{R}}
+\newcommand{\1}{\mathbbm{1}}
+\title{Conjugate Gradient for \\ Quadratic Minimum-Cost Flow}
 \author{Lorenzo Beretta, \texttt{loribere@gmail.com}
-  \and Project NoML-13 of CM course, A.Y. 2018-19}
+  \and Project NoML-13 of C.M. course, C.S. department, UniPi}
 \date{3rd July 2019}
 
 \begin{document}
 \maketitle
 
-\begin{abstract}
-  Given the linear system $ \left(E^t D^{-1} E\right) x = b $ arising from the KKT conditions of a quadratic separable Minimum-Cost Flow problem, where E is the edge-node matrix of a directed graph, our aim is to solve that using the Conjugate Gradient method.
-\end{abstract}
 
+\section{Introduction}
+The aim of this project is to exploit the Conjugate Gradient method to solve the
+linear system
 
-\begin{Introduction}
+\begin{equation} \label{linear_system}
+  \left(E D^{-1} E^t\right) x = b
+\end{equation}
+
+where $E \in \R^{n \times m}$  is the node-edge matrix of a directed graph
+and $D \in {\R^{m \times m}$ is a diagonal positive definite matrix.
+
+This problem arises from the KKT conditions of a quadratic separable Minimum-Cost
+Flow problem when we do not impose any capacity constraint on arcs.
   
+\section{MCF Problem}
+Let us derive the equivalence of uncapacited quadratic separable MCF and the linear
+system problem stated above.
 
-  \cite{trefethen97}
-\end{Introduction}
-  
+\subsection{Problem Statement}
+Given a directed graph $G = \left(N, A\right)$ such that $|N| = n$ and $|A| = m$ and
+a balance vector $b \in \R^n$ such that $\1^t b = 0$ encoding how much
+flow is supplied or requested by each node, we want to find a flow vector
+$f \in \R^m$ that satisfies $ E f = b $ and minimizes $\frac{1}{2}f^t D f + q^t f$
+given a diagonal matrix $D \in \R^{m \times m}$, $D \succeq 0$ and $q \in \R^m$.
+
+\subsection{Optimality as a linear problem}
+We can easily reconduct the previous objective function to the simpler
+$ \frac{1}{2}\tilde{f}^t D \tilde{f} $, in fact it is sufficient to impose
+$\tilde{f} = f - D^{-1} q$, $\tilde{b} = b - E D^{-1} q$ and neglect the
+constant offset in the objective function. Then forgetting tildes our
+optimization problem becomes:
+
+\begin{equation}
+  \begin{gathered}
+    \min_{f \in \R^m} f^t D f \\
+    E f = b
+  \end{gathered}
+\end{equation}
+
+Then imposing Lagrangian multipliers conditions (a.k.a. ``poorman'' KKT) we get
+
+\begin{equation*}
+  f \text{ is optimal} \iff
+  \left\{\begin{gathered}
+    f^t D = x^t E \\  
+    E f = b
+  \end{gatheres}
+  \iff
+   \left\{\begin{gathered}
+    f = D^{-1} E^t x\\  
+    \left(E D^{-1} E^t\right) x = b
+  \end{gatheres}
+\end{equation*}
+
+From now on we can forget the optimization problem and deal just with the linear system.
+
+
+
+ESEMPIO DI CITAIZONE
+\cite{trefethen97}
   
 \bibliographystyle{acm}  
 \bibliography{biblio}

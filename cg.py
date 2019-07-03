@@ -77,7 +77,7 @@ def my_cg(A, b, tol=1e-5, maxiter=None, callback=None):
 
 def make_operator(edges, n):
     ''' This function returns a LinearOperator object performing
-    the product x -> E^t * D^-1 * E * x where E is the edge-node
+    the product x -> E * D^-1 * E^t * x where E is the edge-node
     matrix and D is the diagonal matrix encoding edges' weights.
 
     Parameters:
@@ -93,7 +93,7 @@ def make_operator(edges, n):
     Returns:
 
     A: {LinearOperator}
-        A is a LinearOperator performing x -> (E^t * D^-1 * E) * x.
+        A is a LinearOperator performing x -> (E * D^-1 * E^t) * x.
     '''
     edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     
@@ -115,7 +115,7 @@ def make_operator(edges, n):
 
 def get_primal(edges, x):
     ''' This function reconstruct primal solution given the dual one.
-    Basically it solves D * f = E * x that is the KKT-G condition.
+    Basically it solves f^t * D = x * E that is the KKT-G condition.
 
     Parameters:
     
@@ -134,7 +134,7 @@ def solve(edges, b, maxiter=None, tol=1e-5, algo=my_cg):
     ''' This function solves uncapacited and undirected quadratic 
     separable MCF, equivalent to the solution of the linear system 
     
-    A * x = b,    with    A = E^t * D^-1 * E
+    A * x = b,    with    A = E * D^-1 * E^t
 
     where E is the edge-node matrix and D is the diagonal matrix
     containing the edges' weights.
