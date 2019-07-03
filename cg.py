@@ -9,9 +9,41 @@ from scipy.sparse.linalg import LinearOperator
 import time
 
 
-def conjugate_gradient(A, b, tol=1e-5, maxiter=None, callback=None):
+def my_cg(A, b, tol=1e-5, maxiter=None, callback=None):
     ''' This function implements the conjugate gradient algorithm 
-    solving A * x = b for a symmetric matrix A.
+    solving A * x = b for a symmetric semipositive-definite matrix A.
+
+    Parameters:
+
+    A: {sparse marix, dense matrix, LinearOperator}
+        It is the symmetric linear operator to invert. It must be able
+        to perform A * x for an array or matrix x of appropriate size.
+    
+    b: {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+    
+    Returns:
+    
+    x: {array, matrix}
+        The converged solution.
+    
+    info: {integer}
+        Provides convergence information:
+        0 : successful exit 
+        >0 : convergence not achieved, returns number of iterations
+
+    Other Parameters:
+
+    tol: {float}
+        Tolerances for convergence, norm(residual) <= tol*norm(b)
+
+    maxiter: {integer}
+        Maximum number of iterations. Iteration will stop after maxiter 
+        steps even if the specified tolerance has not been achieved.
+
+    callback: {function}
+        User-supplied function to call after each iteration. It is called 
+        as callback(xk), where xk is the current solution vector.
     '''
     x = np.zeros(len(b))                 # current approximate solution
     r = np.array(b)                      # current residual value
@@ -19,13 +51,11 @@ def conjugate_gradient(A, b, tol=1e-5, maxiter=None, callback=None):
     rr = np.dot(r, r)                    # error squared norm
     tol *= np.sqrt(rr)
     itn = 0
-    info = 0
-
+    
     while np.sqrt(rr) > tol:
 
         if maxiter and itn >= maxiter:   # method not converged
-            info = maxiter
-            break
+            return x, maxiter
         
         Ap = A * p                       # fast matrix-vector product
         alpha = rr / np.dot(p, Ap)       # step length
@@ -47,7 +77,23 @@ def conjugate_gradient(A, b, tol=1e-5, maxiter=None, callback=None):
 
 def make_operator(edges, n):
     ''' This function returns a LinearOperator object performing
-    the product x -> E^t * D^-1 * E * x
+    the product x -> E^t * D^-1 * E * x where E is the edge-node
+    matrix and D is the diagonal matrix encoding edges' weights.
+
+    Parameters:
+
+    edges: {list}
+        It is a list of triples (u, v, w) where u is the start
+        node, v the end node and w the quadratic weight associated.
+
+    n: {integer}
+        It is the number of nodes, or equivalenty the dimention of
+        the input and output spaces of the operator created.
+
+    Returns:
+
+    A: {LinearOperator}
+        A is a LinearOperator performing x -> (E^t * D^-1 * E) * x.
     '''
     edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
     
@@ -67,14 +113,24 @@ def make_operator(edges, n):
     return A 
 
 
-def get_primal(edges, dual):
+def get_primal(edges, x):
     ''' This function reconstruct primal solution given the dual one.
+    Basically it solves D * f = E * x that is the KKT-G condition.
+
+    Parameters:
+    
+    edges: {list}
+        It is a list of triples (u, v, w) where u is the start
+        node, v the end node and w the quadratic weight associated.
+
+    x: {array, matrix}
+        The dual solution.
     '''
-    primal = [(dual[e[1]] - dual[e[0]]) / e[2] for e in edges]
-    return np.array(primal)
+    f = [(x[e[1]] - x[e[0]]) / e[2] for e in edges]
+    return np.array(f)
 
 
-def solve(edges, b, maxiter=None, tol=1e-5, algo=conjugate_gradient):
+def solve(edges, b, maxiter=None, tol=1e-5, algo=my_cg):
     ''' This function solves uncapacited and undirected quadratic 
     separable MCF, equivalent to the solution of the linear system 
     
@@ -85,6 +141,46 @@ def solve(edges, b, maxiter=None, tol=1e-5, algo=conjugate_gradient):
 
     It is parametric in the algorithm used to solve that linear
     system in order to compare different solutions.
+
+    Parameters:
+
+    edges: {list}
+        It is a list of triples (u, v, w) where u is the start
+        node, v the end node and w the quadratic weight associated.
+
+    b: {array, matrix}
+        Right hand side of the linear system. Has shape (N,) or (N,1).
+        It encodes the flow balance conditionds defining sinks and 
+        sources. 
+
+    Returns:
+
+    x: {array, matrix}
+        The converged dual solution, provided by linear solver.
+    
+    f: {array, matrix}
+        The primal solution (i.e. the optimal MCF).
+
+    itn: {integer}
+        Number of iteration required by the solver.
+    
+    tspan: {float}
+        Time required to solve the linear system.
+
+    info: {integer}
+        Provides linear solver convergence information:
+        0 : successful exit 
+        >0 : convergence not achieved, returns number of iterations
+
+    Other Parameters:
+
+    maxiter: {integer}
+        Maximum number of iterations for linear solver. Iteration 
+        will stop after maxiter steps even if the specified tolerance 
+        has not been achieved.
+
+    tol: {float}
+        Solver convergence condition is norm(residual) <= tol*norm(b).  
     '''    
     A = make_operator(edges, len(b))  # defining linear operator
 
@@ -104,8 +200,25 @@ def solve(edges, b, maxiter=None, tol=1e-5, algo=conjugate_gradient):
 
 
 def read_DIMACS(file_path):
-    ''' This method reads the topology and costs of an undirected 
-    graph form a file following the DIMACS Min-Cost flow convention.
+    ''' This method reads topology, costs and balance vector of an 
+    undirected graph form a file following the DIMACS Min-Cost flow 
+    conventions.
+    
+    Parameters:
+
+    file_path: {string}
+        The path form current directory to the DIMACS compliant file
+        encoding the MCF graph.
+
+    Returns:
+
+    edges: {list}
+        It is a list of triples (u, v, w) where u is the start
+        node, v the end node and w the quadratic weight associated.
+
+    b: {array, matrix}
+        It encodes the flow balance conditionds defining sinks and 
+        sources.
     '''
     file = open(file_path, 'r')
     edges = []
