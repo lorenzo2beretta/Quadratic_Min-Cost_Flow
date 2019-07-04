@@ -6,9 +6,10 @@
 \usepackage{geometry}
 \usepackage{bbm}
 \usepackage{amsmath}
-\usepackage{systeme}
-\geometry{a4paper, left=30mm, right=30mm}
+\usepackage{algpseudocode}
 
+\DeclareMathOperator*{\argmin}{arg\,min}
+\geometry{a4paper, left=30mm, right=30mm}
 \setlength\parindent{0pt}
 
 \newcommand{\R}{\mathbbm{R}}
@@ -51,7 +52,7 @@ given a diagonal matrix $D \in \R^{m \times m}$, $D \succeq 0$ and $q \in \R^m$.
 We can easily reconduct the previous objective function to the simpler
 $ \frac{1}{2}\tilde{f}^t D \tilde{f} $, in fact it is sufficient to impose
 $\tilde{f} = f - D^{-1} q$, $\tilde{b} = b - E D^{-1} q$ and neglect the
-constant offset in the objective function. Then forgetting tildes our
+constant offset in the objective function. Hence forgetting tildes our
 optimization problem becomes:
 
 \begin{equation}
@@ -78,10 +79,67 @@ Then imposing Lagrangian multipliers conditions (a.k.a. ``poorman'' KKT) we get
 
 From now on we can forget the optimization problem and deal just with the linear system.
 
+\section{Conjugate Gradient Algorithm}
+In this section we will show the conjugate gradient method to solve a linear  system of the form $ A x = b $ for a symmetric and positive semidefinite matrix $A$.
 
+Our main reference for this method is the book of Trefethen {\em et al.} \cite{trefethen97} that treats the strictly positive definite case, it is easy to adapt their proofs to show that assuming $b \in range(A)$ all results stated there hold even in the semidefinite case. This is necessary to our application since $E^t D^{-1} E$ has rank exactly $n-1$ in fact $rk(E)=n-c$ where $c$ is the number of connected components of the graph (assumed to be connected) and $rk(D) = m$.
+Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to the solution having null components in $Ker(A)$.
 
-ESEMPIO DI CITAIZONE
-\cite{trefethen97}
+\subsection{Algorithm}
+
+\vbox{
+\begin{algorithmic}[1]
+\Procedure{ConjugateGradient}{$A, b$}
+  \State {$ x_0 = 0, \quad r_0 = b, \quad p_0 = b $}
+  \For {$ n = 1,\, 2,\, 3,\, \dots $}
+    \State {$ \alpha_n = \left(r_ {n-1}^tr_ {n-1}\right) / \left(p_ {n-1}^tAp_ {n-1}}\right) $} \Comment{Step Length}
+    \State {$ x_n = x_{n-1} + \alpha_n p_{n-1} $} \Comment{Approximate Solution}
+    \State {$ r_n = r_{n-1} - \alpha_n A p_{n-1} $} \Comment{Residual}
+    \State {$\beta_n = \left(r_n^t r_n\right) / \left(r_{n-1}^t r_{n-1}^t\right)$} \Comment{Improvement this Step}
+    \State {$p_n = r_n + \beta_n p_{n-1} $} \Comment{Search Direction}
+  \EndFor
+\EndProcedure
+\end{algorithmic}
+}
+\hspace{1cm}
+
+\subsection{CG as a Direct Method}
+The main property of this algorithm is that for every $n$ such that the algorithm has not converged yet it holds that:
+
+\begin{equation*}
+  \mathcal{K}_n = \langle x_1,\, \dots,\,x_n\rangle = \langle r_0,\, \dots,\,r_{n-1}\rangle = \langle p_0,\, \dots,\,p_{n-1}\rangle = \langle b,\,A b, \, \dots,\,A^{n-1} b\rangle \\
+\end{equation*}
+
+\begin{equation*}
+  r_n^t r_j = 0, \quad p_n^t A p_j = 0 \quad \forall j < n
+\end{equation*}
+\hspace{0.5cm}
+
+It is easy to show that this property entails that the algorithm is well defined even in the singular case since $ b \in range(A) \implies p_{n-1} \in range(A)$. Moreover the fundamental corollary of that property is that  at each step
+$$x_n = \argmin_{z \in \mathcal{K}_n} || x_* - z ||_A $$
+for every $x_*$ such that $Ax_* = b$. Therefore in exact arithmetic it must converge in at most $n$ steps and the method is then a direct one.
+
+\subsection{CG as an Interative Method}
+Conjugate gradient has a twofold nature and can be interpreted as an optimization algorithm whose objective function is $ || x_* - x ||_A $ that up to a positive scaling and a shift is equal to $ \frac{1}{2}x^t A x - x^t b$. Then it becomes interesting to study its convergence rate trying to speedup the direct method bound of $n$ iterations.
+
+The main result employed to derive the convergence rate is the following:
+
+$$ \frac{||e_n||_A}{||e_0||_A} \leq \inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\frac{\sum_i a_i^2 \lambda_i \left(p(\lambda_i)\right)^2}{\sum_i a_i^2 \lambda_i}} \leq \inf_{p \in P_n} \max_{\lambda \in sp(A)\setminus\{0\}}|p(\lambda)|_
+$$
+\hspace{1cm}
+where $e_n = x_* - x_n$ and $P_n = \left\{p \in \R[x]\, |\, deg(p) \leq n, \; p(0) = 1 \right\}$. It is worth noting that it is slightly different from the one in \cite{trefethen97} and it takes into account the singular case showing that this bound doesn't degrade.
+
+\subsection{Rate of Convergence}
+The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then RHS in the previous inequality is null since the polynomial perfectly interpolates them.
+
+On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given the condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$ of $A$ it holds that
+
+$$ \frac{||e_n||_A}{||e_0||_A} \leq 2 \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}\right)^n $$
+
+Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too sparse in logarithmic scale. We are now confirming this trend experimentally. 
+
+\section{}
+
   
 \bibliographystyle{acm}  
 \bibliography{biblio}
