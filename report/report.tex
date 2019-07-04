@@ -84,7 +84,7 @@ From now on we can forget the optimization problem and just deal with the linear
 In this section we will show the conjugate gradient method to solve a linear  system of the form $ A x = b $ for a symmetric and positive semidefinite matrix $A$.
 
 Our main reference for this method is the book of Trefethen {\em et al.} \cite{trefethen97} that treats the strictly positive definite case, it is easy to adapt their proofs to show that assuming $b \in range(A)$ all results stated there hold even in the semidefinite case. This is necessary to our application since $E^t D^{-1} E$ has rank exactly $n-1$ in fact $rk(E)=n-c$ where $c$ is the number of connected components of the graph (assumed to be connected) and $rk(D) = m$.
-Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to the solution having null components in $Ker(A)$.
+Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$.
 
 \subsection{Algorithm}
 In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved.
