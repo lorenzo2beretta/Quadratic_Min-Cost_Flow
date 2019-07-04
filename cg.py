@@ -1,4 +1,4 @@
-#  Si dichiara che il contenuto di questo file è in ogni sua parte
+#  Si dichiara che il contenuto di questo file e in ogni sua parte
 #  opera originale dell'autore.
 #
 #  Lorenzo Beretta, 536242, loribere@gmail.com
@@ -72,7 +72,7 @@ def my_cg(A, b, tol=1e-5, maxiter=None, callback=None):
         callback(x)
 
     
-    return x, info
+    return x, 0
 
 
 def make_operator(edges, n):

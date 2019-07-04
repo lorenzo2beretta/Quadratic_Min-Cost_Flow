@@ -7,6 +7,7 @@
 \usepackage{bbm}
 \usepackage{amsmath}
 \usepackage{algpseudocode}
+\usepackage{hyperref}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \geometry{a4paper, left=30mm, right=30mm}
@@ -86,6 +87,7 @@ Our main reference for this method is the book of Trefethen {\em et al.} \cite{t
 Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to the solution having null components in $Ker(A)$.
 
 \subsection{Algorithm}
+In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved.
 
 \vbox{
 \begin{algorithmic}[1]
@@ -102,6 +104,8 @@ Of course the algorithm converges to one of the infinite solutions of the system
 \end{algorithmic}
 }
 \hspace{1cm}
+
+It is worth noting that the bottleneck of the single iteration is the computation of $Ap_{n-1}$, it can be fasten up considering the structure of A and then performing it using exactly $m + O(1)$ multiplications and $3m + O(1)$ additions achieving a total complexity of $O(m)$ per iteration with a very low constant factor.
 
 \subsection{CG as a Direct Method}
 The main property of this algorithm is that for every $n$ such that the algorithm has not converged yet it holds that:
@@ -138,8 +142,20 @@ $$ \frac{||e_n||_A}{||e_0||_A} \leq 2 \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kapp
 
 Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too sparse in logarithmic scale. We are now confirming this trend experimentally. 
 
-\section{}
+\section{Experiments}
+\subsection{Data Generation}
+In order to perform the experiments we needed to generate an undirected graph and a weight for each arc (representing the quadratic coefficient). As far as network generation is concerned we used the well-known capacited network generator NetGen retrieved at \href{http://www.di.unipi.it/optimize/Data/MCF.html}{http://www.di.unipi.it/optimize/Data/MCF.html}. All the experiments has been performed on graphs having 3000 arcs and density 0.75. In order to generate parameters we used a uniform distributions and exponentiate them since we were interested in sparsity in logarithmic scale. Further we varied the range in within we sampled uniformly showing that the problem becomes quickly intractable if eigenvalues are (relatively) too close to the origin.
 
+\subsection{Comparison with Libraries}
+We compared the function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg} and found out that, fixing relative tolerance the number of iteration is approximately the same.
+
+
+
+\subsection{Machine}
+All the experiment has been run on a an Intel i3-6006U CPU, x86\_64, 2.00GHz running Linux Debian 9.
+
+\section{Code}
+The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy} and \texttt{numpy} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has basically the same signature as the off-the-shelf solver and then they may be compared in a few lines of code.
   
 \bibliographystyle{acm}  
 \bibliography{biblio}
