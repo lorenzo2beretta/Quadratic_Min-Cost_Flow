@@ -12,9 +12,9 @@
 \DeclareMathOperator*{\argmin}{arg\,min}
 \geometry{a4paper, left=30mm, right=30mm}
 \setlength\parindent{0pt}
-
 \newcommand{\R}{\mathbbm{R}}
 \newcommand{\1}{\mathbbm{1}}
+
 \title{Conjugate Gradient for \\ Quadratic Minimum-Cost Flow}
 \author{Lorenzo Beretta, \texttt{loribere@gmail.com}
   \and Project NoML-13 of C.M. course, C.S. department, UniPi}
@@ -78,7 +78,7 @@ Then imposing Lagrangian multipliers conditions (a.k.a. ``poorman'' KKT) we get
   \end{gatheres}
 \end{equation*}
 
-From now on we can forget the optimization problem and deal just with the linear system.
+From now on we can forget the optimization problem and just deal with the linear system.
 
 \section{Conjugate Gradient Algorithm}
 In this section we will show the conjugate gradient method to solve a linear  system of the form $ A x = b $ for a symmetric and positive semidefinite matrix $A$.
@@ -134,7 +134,7 @@ $$
 where $e_n = x_* - x_n$ and $P_n = \left\{p \in \R[x]\, |\, deg(p) \leq n, \; p(0) = 1 \right\}$. It is worth noting that it is slightly different from the one in \cite{trefethen97} and it takes into account the singular case showing that this bound doesn't degrade.
 
 \subsection{Rate of Convergence}
-The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then RHS in the previous inequality is null since the polynomial perfectly interpolates them.
+The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates eigenvalues.
 
 On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given the condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$ of $A$ it holds that
 
@@ -147,15 +147,24 @@ Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast converg
 In order to perform the experiments we needed to generate an undirected graph and a weight for each arc (representing the quadratic coefficient). As far as network generation is concerned we used the well-known capacited network generator NetGen retrieved at \href{http://www.di.unipi.it/optimize/Data/MCF.html}{http://www.di.unipi.it/optimize/Data/MCF.html}. All the experiments has been performed on graphs having 3000 arcs and density 0.75. In order to generate parameters we used a uniform distributions and exponentiate them since we were interested in sparsity in logarithmic scale. Further we varied the range in within we sampled uniformly showing that the problem becomes quickly intractable if eigenvalues are (relatively) too close to the origin.
 
 \subsection{Comparison with Libraries}
-We compared the function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg} and found out that, fixing relative tolerance the number of iteration is approximately the same.
+We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that my implementation works as expected.
+
+\subsection{Data}
+Experiments' data are available, two files in \texttt{.csv} format are attached. The file \texttt{data1} contains data regarding my own implementation while \texttt{data2} contains data produced by the scipy's method. They consist of several rows each one containing 4 columns: (\texttt{rad}, \texttt{itn}, \texttt{t}, \texttt{err}); \texttt{rad} is the radius of the range from which we extract uniformly random values to feed an exponential returning weights, \texttt{itn} is the number of iteration performed, \texttt{t} is the time elapsed and \texttt{err} is the relative error $||Ax - b||$.
 
 
+\subsection{Convergence Rate}
+Here we observe the plot \texttt{rad}-\texttt{itn} showing how CG slow down when the starting matrix is ill conditioned, obtaining a substantial increase in the number of iterations once eigenvalues become sparser and sparser. 
+
+\begin{center}
+\includegraphics[scale=0.7, H]{rad-itn.png}
+\end{center}
 
 \subsection{Machine}
 All the experiment has been run on a an Intel i3-6006U CPU, x86\_64, 2.00GHz running Linux Debian 9.
 
 \section{Code}
-The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy} and \texttt{numpy} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has basically the same signature as the off-the-shelf solver and then they may be compared in a few lines of code.
+The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy} and \texttt{numpy} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has basically the same signature as the off-the-shelf solver and then they may be compared in a few lines of code. All the core functions are in \texttt{cg.py} while \texttt{test.py} contains only methods to automate experimentation.
   
 \bibliographystyle{acm}  
 \bibliography{biblio}
