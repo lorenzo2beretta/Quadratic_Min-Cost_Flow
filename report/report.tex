@@ -8,12 +8,16 @@
 \usepackage{amsmath}
 \usepackage{algpseudocode}
 \usepackage{hyperref}
+\usepackage{amsthm}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \geometry{a4paper, left=30mm, right=30mm}
+
 \setlength\parindent{0pt}
 \newcommand{\R}{\mathbbm{R}}
 \newcommand{\1}{\mathbbm{1}}
+\newtheorem{theorem}{Theorem}
+
 
 \title{Conjugate Gradient for \\ Quadratic Minimum-Cost Flow}
 \author{Lorenzo Beretta, \texttt{loribere@gmail.com}
@@ -84,7 +88,7 @@ From now on we can forget the optimization problem and just deal with the linear
 In this section we will show the conjugate gradient method to solve a linear  system of the form $ A x = b $ for a symmetric and positive semidefinite matrix $A$.
 
 Our main reference for this method is the book of Trefethen {\em et al.} \cite{trefethen97} that treats the strictly positive definite case, it is easy to adapt their proofs to show that assuming $b \in range(A)$ all results stated there hold even in the semidefinite case. This is necessary to our application since $E^t D^{-1} E$ has rank exactly $n-1$ in fact $rk(E)=n-c$ where $c$ is the number of connected components of the graph (assumed to be connected) and $rk(D) = m$.
-Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$.
+Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$ where $Ker(E^t D^{-1} E) = \langle \1 \rangle$.
 
 \subsection{Algorithm}
 In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved.
@@ -105,7 +109,7 @@ In the following algorithm $x_n$ is the approximate solution at step $n$ and the
 }
 \hspace{1cm}
 
-It is worth noting that the bottleneck of the single iteration is the computation of $Ap_{n-1}$, it can be fasten up considering the structure of A and then performing it using exactly $m + O(1)$ multiplications and $3m + O(1)$ additions achieving a total complexity of $O(m)$ per iteration with a very low constant factor.
+It is worth noting that the bottleneck of the single iteration is the computation of $Ap_{n-1}$ and it can be fasten up considering the structure of A. It suffices to notice that $E$ has exactly $2m$ nonzero elements and employ a sparse matrix multiplication to achieve an $O(m)$ complexity per iteration. Moreover our implementation performs exactly $m + O(1)$ multiplications and $3m + O(1)$ additions keeping the constant factor very low.
 
 \subsection{CG as a Direct Method}
 The main property of this algorithm is that for every $n$ such that the algorithm has not converged yet it holds that:
@@ -126,12 +130,20 @@ for every $x_*$ such that $Ax_* = b$. Therefore in exact arithmetic it must conv
 \subsection{CG as an Interative Method}
 Conjugate gradient has a twofold nature and can be interpreted as an optimization algorithm whose objective function is $ || x_* - x ||_A $ that up to a positive scaling and a shift is equal to $ \frac{1}{2}x^t A x - x^t b$. Then it becomes interesting to study its convergence rate trying to speedup the direct method bound of $n$ iterations.
 
-The main result employed to derive the convergence rate is the following:
+The main result employed to derive the convergence rate is the a slight modification of theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97}:
 
-$$ \frac{||e_n||_A}{||e_0||_A} \leq \inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\frac{\sum_i a_i^2 \lambda_i \left(p(\lambda_i)\right)^2}{\sum_i a_i^2 \lambda_i}} \leq \inf_{p \in P_n} \max_{\lambda \in sp(A)\setminus\{0\}}|p(\lambda)|_
+\begin{theorem}[Polynomial Approximation]\label{polap}
+  Let us define $e_n = x_* - x_n$ and $P_n = \left\{p \in \R[x]\, |\, deg(p) \leq n, \; p(0) = 1 \right\}$. If CG is not converged yet before step $n$ (i.e. $r_{n-1} \neq 0$) then 
+$$ \frac{||e_n||_A}{||e_0||_A} \leq \inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n} \max_{\lambda \in sp(A)\setminus\{0\}}|p(\lambda)|
 $$
-\hspace{1cm}
-where $e_n = x_* - x_n$ and $P_n = \left\{p \in \R[x]\, |\, deg(p) \leq n, \; p(0) = 1 \right\}$. It is worth noting that it is slightly different from the one in \cite{trefethen97} and it takes into account the singular case showing that this bound doesn't degrade.
+\end{theorem}
+\begin{proof}
+  Let us decompose $e_0$ over the orthonormal basis of $A$-eigenvectors as\\ $e_0 = \sum_i a_i v_i$ provided that $A v_i = \lambda_i v_i$, then
+$$\inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\frac{\sum_i a_i^2 \lambda_i \left(p(\lambda_i)\right)^2}{\sum_i a_i^2 \lambda_i}}\leq \inf_{p \in P_n} \max_{\lambda \in sp(A)\setminus\{0\}}|p(\lambda)|$$
+
+\end{proof}
+
+ Theorem \ref{polap} enhances theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97} taking into account the singular case and showing that even in that case this bound doesn't degrade.
 
 \subsection{Rate of Convergence}
 The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates eigenvalues.
