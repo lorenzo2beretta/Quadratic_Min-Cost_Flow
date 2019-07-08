@@ -9,6 +9,7 @@
 \usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage{amsthm}
+\usepackage{xcolor}
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \geometry{a4paper, left=30mm, right=30mm}
@@ -16,6 +17,7 @@
 \setlength\parindent{0pt}
 \newcommand{\R}{\mathbbm{R}}
 \newcommand{\1}{\mathbbm{1}}
+\newcommand\note[1]{\textcolor{red}{\textbf{#1}}}
 \newtheorem{theorem}{Theorem}
 
 
@@ -120,14 +122,23 @@ On the other hand a more technical result involving the iterative nature of the 
 
 $$ \frac{||e_n||_A}{||e_0||_A} \leq 2 \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}\right)^n $$
 
-Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too sparse in logarithmic scale. We will assess a strong dependence of convergence time on eigenvalues distribution experimentally. 
+Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too separated in logarithmic scale. We will assess a strong dependence of convergence time on eigenvalues distribution experimentally. 
+
 
 \section{Experiments}
 \subsection{Data Generation}
-In order to perform the experiments we needed to generate an undirected graph and a weight for each arc (representing the quadratic coefficient). As far as network generation is concerned we used the well-known capacited network generator NetGen retrieved at \href{http://www.di.unipi.it/optimize/Data/MCF.html}{http://www.di.unipi.it/optimize/Data/MCF.html}. All the experiments has been performed on graphs having 3000 arcs and density 0.75. In order to generate parameters we used a uniform distributions and exponentiate them since we were interested in sparsity in logarithmic scale. Further we varied the range in within we sampled uniformly showing that the problem becomes quickly intractable if eigenvalues are (relatively) too close to the origin.
+In order to perform the experiments we needed to generate three objects: the matrix $E\in \R^{n\times m}$ (equivalent to generate a digraph's topology), the diagonal positive definite matrix $D\in\R^{m\times m$ and the vector $b\in\R^n$.
+
+\note{Parlare della generazione dei Grafi.}
+  
+As far as network generation is concerned we used   the well-known capacited network generator NetGen retrieved at \href{http://www.di.unipi.it/optimize/Data/MCF.html}{http://www.di.unipi.it/optimize/Data/MCF.html}.
+
+\note{Eliminare la Shit seguente}
+
+All the experiments has been performed on graphs having 3000 arcs and density 0.75. In order to generate parameters we used a uniform distributions and exponentiate them since we were interested in sparsity in logarithmic scale. Further we varied the range in within we sampled uniformly showing that the problem becomes quickly intractable if eigenvalues are (relatively) too close to the origin.
 
 \subsection{Comparison with Libraries}
-We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that my implementation works as expected.
+We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that my implementation works as  expected.
 
 \subsection{Data}
 Experiments' data are available, two files in \texttt{.csv} format are attached. The file \texttt{data1} contains data regarding my own implementation while \texttt{data2} contains data produced by the scipy's method. They consist of several rows each one containing 4 columns: (\texttt{rad}, \texttt{itn}, \texttt{t}, \texttt{err}); \texttt{rad} is the radius of the range from which we extract uniformly random values to feed an exponential returning weights, \texttt{itn} is the number of iteration performed, \texttt{t} is the time elapsed and \texttt{err} is the relative error $||Ax - b||$.
