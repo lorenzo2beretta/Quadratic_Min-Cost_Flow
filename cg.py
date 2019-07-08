@@ -1,3 +1,4 @@
+
 #  Si dichiara che il contenuto di questo file e in ogni sua parte
 #  opera originale dell'autore.
 #
@@ -99,7 +100,8 @@ def make_operator(edges, n):
     
     def matvec(x):
         ''' Fast matrix-vector multiplication exploiting the structure
-        of E, achieving O(|A|) time complexity.
+        of E^t * D * E. It employs exactly m multiplication and 3m
+        additions.
         '''
         res = np.zeros(len(x))
         for e in edges:

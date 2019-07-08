@@ -29,6 +29,16 @@
 
 
 \section{Introduction}
+Let $D \in {\R^{m \times m}$ be a diagonal positive definite matrix and $E \in \R^{n \times m}$ be the node-edge matrix of a directed graph, meaning that, given an enumeration $e[1\dots m]$ of edges, we have
+  \begin{equation*}
+    E_{i, j} = \left\{
+      \begin{align*}
+        1 \qquad&  \text{ if $e[j] = (u, v)$ and $j = v$} \\
+        -1 \qquad& \text{ if $e[j] = (u, v)$ and $j = u$} \\
+        0 \qquad&  \text{ otherwise}
+      \end{align*}
+   \end{equation*}
+        
 The aim of this project is to exploit the Conjugate Gradient method to solve the
 linear system
 
@@ -36,62 +46,20 @@ linear system
   \left(E D^{-1} E^t\right) x = b
 \end{equation}
 
-where $E \in \R^{n \times m}$  is the node-edge matrix of a directed graph
-and $D \in {\R^{m \times m}$ is a diagonal positive definite matrix.
+for some $b \in \R^n$. 
 
 This problem arises from the KKT conditions of a quadratic separable Minimum-Cost
-Flow problem when we do not impose any capacity constraint on arcs.
-  
-\section{MCF Problem}
-Let us derive the equivalence of uncapacited quadratic separable MCF and the linear
-system problem stated above.
+Flow problem, however we will just neglect its origin and just deal with the linear system.
 
-\subsection{Problem Statement}
-Given a directed graph $G = \left(N, A\right)$ such that $|N| = n$ and $|A| = m$ and
-a balance vector $b \in \R^n$ such that $\1^t b = 0$ encoding how much
-flow is supplied or requested by each node, we want to find a flow vector
-$f \in \R^m$ that satisfies $ E f = b $ and minimizes $\frac{1}{2}f^t D f + q^t f$
-given a diagonal matrix $D \in \R^{m \times m}$, $D \succeq 0$ and $q \in \R^m$.
-
-\subsection{Optimality as a linear problem}
-We can easily reconduct the previous objective function to the simpler
-$ \frac{1}{2}\tilde{f}^t D \tilde{f} $, in fact it is sufficient to impose
-$\tilde{f} = f - D^{-1} q$, $\tilde{b} = b - E D^{-1} q$ and neglect the
-constant offset in the objective function. Hence forgetting tildes our
-optimization problem becomes:
-
-\begin{equation}
-  \begin{gathered}
-    \min_{f \in \R^m} f^t D f \\
-    E f = b
-  \end{gathered}
-\end{equation}
-
-Then imposing Lagrangian multipliers conditions (a.k.a. ``poorman'' KKT) we get
-
-\begin{equation*}
-  f \text{ is optimal} \iff
-  \left\{\begin{gathered}
-    f^t D = x^t E \\  
-    E f = b
-  \end{gatheres}
-  \iff
-   \left\{\begin{gathered}
-    f = D^{-1} E^t x\\  
-    \left(E D^{-1} E^t\right) x = b
-  \end{gatheres}
-\end{equation*}
-
-From now on we can forget the optimization problem and just deal with the linear system.
 
 \section{Conjugate Gradient Algorithm}
 In this section we will show the conjugate gradient method to solve a linear  system of the form $ A x = b $ for a symmetric and positive semidefinite matrix $A$.
 
 Our main reference for this method is the book of Trefethen {\em et al.} \cite{trefethen97} that treats the strictly positive definite case, it is easy to adapt their proofs to show that assuming $b \in range(A)$ all results stated there hold even in the semidefinite case. This is necessary to our application since $E^t D^{-1} E$ has rank exactly $n-1$ in fact $rk(E)=n-c$ where $c$ is the number of connected components of the graph (assumed to be connected) and $rk(D) = m$.
-Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$ where $Ker(E^t D^{-1} E) = \langle \1 \rangle$.
+Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$, indeed $Ker(E^t D^{-1} E) = \langle \1 \rangle$.
 
 \subsection{Algorithm}
-In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved.
+In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved\footnote{In our implementation we emulated the scipy's CG criterion stopping as soon as $\frac{||r_n||_2}{ ||b||_2}$ falls below a fixed threshold.}.
 
 \vbox{
 \begin{algorithmic}[1]
@@ -109,7 +77,7 @@ In the following algorithm $x_n$ is the approximate solution at step $n$ and the
 }
 \hspace{1cm}
 
-It is worth noting that the bottleneck of the single iteration is the computation of $Ap_{n-1}$ and it can be fasten up considering the structure of A. It suffices to notice that $E$ has exactly $2m$ nonzero elements and employ a sparse matrix multiplication to achieve an $O(m)$ complexity per iteration. Moreover our implementation performs exactly $m + O(1)$ multiplications and $3m + O(1)$ additions keeping the constant factor very low.
+It is worth noting that the bottleneck of the single iteration is the computation of $Ap_{n-1}$ and it can be fasten up considering the structure of A. It suffices to notice that $E$ has exactly $2m$ nonzero elements and employ a sparse matrix multiplication to achieve an $O(m)$ complexity per iteration. Moreover our implementation performs exactly $m$ multiplications and $3m$ additions keeping the constant factor very low\footnote{See \texttt{make\_operator} method in \texttt{cg.py} for more details.}.
 
 \subsection{CG as a Direct Method}
 The main property of this algorithm is that for every $n$ such that the algorithm has not converged yet it holds that:
@@ -123,14 +91,14 @@ The main property of this algorithm is that for every $n$ such that the algorith
 \end{equation*}
 \hspace{0.5cm}
 
-It is easy to show that this property entails that the algorithm is well defined even in the singular case since $ b \in range(A) \implies p_{n-1} \in range(A)$. Moreover the fundamental corollary of that property is that  at each step
+It is easy to show that this property entails that the algorithm is well defined even in the singular case since $ b \in range(A) \implies p_{n-1} \in range(A) \implies p_{n-1}^t A p_{n-1} \neq 0$. Moreover the fundamental corollary of that property is that  at each step
 $$x_n = \argmin_{z \in \mathcal{K}_n} || x_* - z ||_A $$
 for every $x_*$ such that $Ax_* = b$. Therefore in exact arithmetic it must converge in at most $n$ steps and the method is then a direct one.
 
 \subsection{CG as an Interative Method}
 Conjugate gradient has a twofold nature and can be interpreted as an optimization algorithm whose objective function is $ || x_* - x ||_A $ that up to a positive scaling and a shift is equal to $ \frac{1}{2}x^t A x - x^t b$. Then it becomes interesting to study its convergence rate trying to speedup the direct method bound of $n$ iterations.
 
-The main result employed to derive the convergence rate is the a slight modification of theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97}:
+The main result employed to derive the convergence rate is this slight modification of theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97}:
 
 \begin{theorem}[Polynomial Approximation]\label{polap}
   Let us define $e_n = x_* - x_n$ and $P_n = \left\{p \in \R[x]\, |\, deg(p) \leq n, \; p(0) = 1 \right\}$. If CG is not converged yet before step $n$ (i.e. $r_{n-1} \neq 0$) then 
@@ -148,11 +116,11 @@ $$\inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\f
 \subsection{Rate of Convergence}
 The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates eigenvalues.
 
-On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given the condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$ of $A$ it holds that
+On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given $A$'s condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$, where $\lambda_{max}$ and $\lambda_{min}$ are extremal eigenvalues, it holds that
 
 $$ \frac{||e_n||_A}{||e_0||_A} \leq 2 \left(\frac{\sqrt{\kappa} - 1}{\sqrt{\kappa} + 1}\right)^n $$
 
-Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too sparse in logarithmic scale. We are now confirming this trend experimentally. 
+Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast convergence of CG) is one that has at least one of the two: (i) eigenvalue forms small clusters so that polynomials can interpolate them ``all at once'' or (ii) eigenvalues are not too sparse in logarithmic scale. We will assess a strong dependence of convergence time on eigenvalues distribution experimentally. 
 
 \section{Experiments}
 \subsection{Data Generation}
