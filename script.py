@@ -7,9 +7,11 @@ from scipy.sparse.linalg import cg
 ''' Generating problem's data. ''' 
 file_path = 'graph'
 edges, n = read_DIMACS(file_path)
-rad = 100
-D = [np.exp(np.random.uniform(-rad, rad)) for e in edges]
 
+rad_D = 500
+D = [np.exp(np.random.uniform(-rad_D, rad_D)) for e in edges]
+
+# trick to sample b s.t. np.ones(len(b))^t * b == 0
 rad_b = 10
 b = [np.random.uniform(-rad_b, rad_b) for i in range (n)]
 proj = np.ones(n)
@@ -18,14 +20,14 @@ b -= proj
 
 A = make_operator(edges, D, n)  # defining linear operator
 
-Apr, bpr = precondition(edges, D, b)
+# Apr, bpr = precondition(edges, D, b)
 
 
 ''' Setting custom parameters '''
 maxiter = 1000
 tol = 1e-5
 
-def run(A, b, algo):
+def run(A, b, algo, isPrec=False):
     res = []
     def callback(xk):
         nonlocal res
@@ -33,35 +35,37 @@ def run(A, b, algo):
         res.append(r)
         
     t0 = time.time()
-    x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback)
+    if isPrec:
+        M = make_preconditioner(edges, D, n)
+        x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback, M=M)
+    else:
+        x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback)
     t1 = time.time()
     tspan = t1 - t0  # measuring elapsed time
     itn = len(res)
     
     return x, info, itn, tspan, res
 
-print( n, len(edges), rad, rad_b)
+print( n, len(edges), rad_D, rad_b)
 
 # comparison
 
+# standard
+'''
 x, info, itn, tspan, res = run(A, b, my_cg)
-print('A:', itn , tspan)
-
-print(np.linalg.norm(A * x - b)) 
-
-# plots
+print('standard:', itn , tspan)
 res = np.log(np.array(res))
 plt.plot(res)
-
-x, info, itn, tspan, res = run(Apr, bpr, my_cg)
-print('Apr:', itn , tspan)
+'''
+# preconditioned
+x, info, itn, tspan, res = run(A, b, cg, isPrec=True)
+print('preconditioned:', itn , tspan)
+res = np.log(np.array(res))
+plt.plot(res)
 
 print(np.linalg.norm(A * x - b))
 
-# plots
-res = np.log(np.array(res))
-plt.plot(res)
-
+# show plots
 plt.show()
 
 

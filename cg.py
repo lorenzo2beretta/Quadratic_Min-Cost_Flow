@@ -115,7 +115,7 @@ def make_operator(edges, D, n):
 
     A = LinearOperator((n, n), matvec=matvec)
     return A
-
+'''
 def precondition(edges, D, b):
     n = len(b)
     diag = [0] * n
@@ -124,17 +124,35 @@ def precondition(edges, D, b):
         diag[e[0]] += d
         diag[e[1]] += d
 
+    diag = [1 / d for d in diag]
     A = make_operator(edges, D, n)
 
     def matvec(x):
         res = A * x
-        res = [r / d for r, d in zip(res, diag)]
+        res = [r * d for r, d in zip(res, diag)]
         return res
 
     Apr = LinearOperator((n, n), matvec=matvec)
-    b = [z / d for z, d in zip(b, diag)]
+    b = [z * d for z, d in zip(b, diag)]
     return Apr, b
+'''
 
+def make_preconditioner(edges, D, n):
+    prec = [0] * n
+    for e, d in zip(edges, D):
+        d = 1 / float(d)
+        prec[e[0]] += d
+        prec[e[1]] += d
+
+    prec = [1 / p for p in prec]
+
+    def matvec(x):
+        res = [z * p for z, p in zip(x, prec)]
+        return res
+
+    M = LinearOperator((n, n), matvec=matvec)
+    return M
+        
 
 def read_DIMACS(file_path):
     ''' This method reads the topology of a digraph form a file 
