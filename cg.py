@@ -137,7 +137,7 @@ def precondition(edges, D, b):
     return Apr, b
 '''
 
-def make_preconditioner(edges, D, n):
+def make_jacobi_prec(edges, D, n):
     prec = [0] * n
     for e, d in zip(edges, D):
         d = 1 / float(d)

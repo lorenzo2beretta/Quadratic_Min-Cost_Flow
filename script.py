@@ -2,13 +2,13 @@ from cg import *
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse.linalg import cg
-  
+from scipy.sparse.linalg import gmres
 
 ''' Generating problem's data. ''' 
 file_path = 'graph'
 edges, n = read_DIMACS(file_path)
 
-rad_D = 500
+rad_D = 10
 D = [np.exp(np.random.uniform(-rad_D, rad_D)) for e in edges]
 
 # trick to sample b s.t. np.ones(len(b))^t * b == 0
@@ -19,54 +19,65 @@ proj *= np.dot(proj, b) / n
 b -= proj
 
 A = make_operator(edges, D, n)  # defining linear operator
-
-# Apr, bpr = precondition(edges, D, b)
+M = make_jacobi_prec(edges, D, n)  # defining Jacobi preconditioner
 
 
 ''' Setting custom parameters '''
-maxiter = 1000
-tol = 1e-5
 
-def run(A, b, algo, isPrec=False):
+def run(A, b, algo, tol=1e-5, maxiter=1000, M=None):
     res = []
-    def callback(xk):
-        nonlocal res
-        r = np.linalg.norm(A * xk - b)
-        res.append(r)
-        
+    if algo == gmres:
+        def callback(rk):
+            r = np.linalg.norm(rk)
+            res.append(r)
+    else:
+        def callback(xk):
+            r = np.linalg.norm(A * xk - b)
+            res.append(r)
+
     t0 = time.time()
-    if isPrec:
-        M = make_preconditioner(edges, D, n)
+    if M:
         x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback, M=M)
     else:
         x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback)
     t1 = time.time()
+
     tspan = t1 - t0  # measuring elapsed time
-    itn = len(res)
+    itn = len(res)   # counting iterations
+    acc = np.linalg.norm(A * x - b)
     
-    return x, info, itn, tspan, res
+    return x, acc, itn, tspan, res
 
 print( n, len(edges), rad_D, rad_b)
 
-# comparison
+# ---------------- COMPARISON -------------------
 
-# standard
-'''
-x, info, itn, tspan, res = run(A, b, my_cg)
-print('standard:', itn , tspan)
-res = np.log(np.array(res))
-plt.plot(res)
-'''
-# preconditioned
-x, info, itn, tspan, res = run(A, b, cg, isPrec=True)
-print('preconditioned:', itn , tspan)
+# standard cg
+x, acc, itn, tspan, res = run(A, b, my_cg)
+print('standard cg:', itn , tspan, acc)
 res = np.log(np.array(res))
 plt.plot(res)
 
-print(np.linalg.norm(A * x - b))
+# preconditioned cg
+x, acc, itn, tspan, res = run(A, b, cg, M=M)
+print('preconditioned cg:', itn , tspan, acc)
+res = np.log(np.array(res))
+plt.plot(res)
+'''
+# standard GMRES
+x, acc, itn, tspan, res = run(A, b, gmres)
+print('standard GMRES:', itn , tspan, acc)
+res = np.log(np.array(res))
+plt.plot(res)
 
-# show plots
-plt.show()
+# preconditioned GMRES
+x, acc, itn, tspan, res = run(A, b, gmres, M=M)
+print('preconditioned GMRES:', itn , tspan, acc)
+res = np.log(np.array(res))
+plt.plot(res)
+'''
+
+plt.show()  # show plots
 
 
 

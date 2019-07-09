@@ -51,7 +51,7 @@ linear system
 for some $b \in \R^n$. 
 
 This problem arises from the KKT conditions of a quadratic separable Minimum-Cost
-Flow problem, however we will just neglect its origin and just deal with the linear system.
+Flow problem, however we will neglect its origin and just deal with the linear system.
 
 
 \section{Conjugate Gradient Algorithm}
@@ -61,7 +61,7 @@ Our main reference for this method is the book of Trefethen {\em et al.} \cite{t
 Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$, indeed $Ker(E^t D^{-1} E) = \langle \1 \rangle$.
 
 \subsection{Algorithm}
-In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved\footnote{In our implementation we emulated the scipy's CG criterion stopping as soon as $\frac{||r_n||_2}{ ||b||_2}$ falls below a fixed threshold.}.
+In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved\footnote{In our implementation we emulated the scipy's CG criterion, stopping as soon as $\frac{||r_n||_2}{ ||b||_2}$ falls below a fixed threshold.}.
 
 \vbox{
 \begin{algorithmic}[1]
@@ -116,7 +116,7 @@ $$\inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\f
  Theorem \ref{polap} enhances theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97} taking into account the singular case and showing that even in that case this bound doesn't degrade.
 
 \subsection{Rate of Convergence}
-The results above provide a better although trivial estimate for the ``exact method'' in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates eigenvalues.
+The results above provide a better although trivial estimate for the ``exact method'' convergence time, in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates them.
 
 On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given $A$'s condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$, where $\lambda_{max}$ and $\lambda_{min}$ are extremal eigenvalues, it holds that
 
@@ -128,14 +128,13 @@ Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast converg
 \section{Experiments}
 \subsection{Data Generation}
 In order to perform the experiments we needed to generate three objects: the matrix $E\in \R^{n\times m}$ (equivalent to generate a digraph's topology), the diagonal positive definite matrix $D\in\R^{m\times m$ and the vector $b\in\R^n$.
-
-\note{Parlare della generazione dei Grafi.}
   
-As far as network generation is concerned we used   the well-known capacited network generator NetGen retrieved at \href{http://www.di.unipi.it/optimize/Data/MCF.html}{http://www.di.unipi.it/optimize/Data/MCF.html}.
+As far as network generation is concerned we used the standard MCF instance generator \texttt{netgen}\footnote{See Klingman {\em et al.} \cite{netgen}} retrieved at \href{https://github.com/emmanuj/netgen}{https://github.com/emmanuj/netgen} as a C version.
+This generator made it possible to vary number of nodes and arc density so that we could test our algorithm over several examples.
 
-\note{Eliminare la Shit seguente}
+Since eigenvalues distribution plays a key role in iterative algorithms' convergence rate and, as stated in the previous section, this holds especially for CG, we deemed the distribution of $D$-eigenvalues as a critical parameter to study experimentally. Trying to figure out a meaningful parametrized distribution to sample from we found that, given the CG convergence rate as a function of $\kappa =  \frac{\lambda_{max}}{\lambda_{min}}$ it would have been nice to have $E^t D^{-1} E$ eigenvalues $0$-symmetrically distributed in logarithmic scale. Although the distribution of $E^t D^{-1} E$ eigenvalues cannot be simply inferred form the one of $D$ (we will see this later in more details) we opted for sampling $D$'s entries exponentiating a r.v. uniformly distributed over $[-rad, rad]$.  
 
-All the experiments has been performed on graphs having 3000 arcs and density 0.75. In order to generate parameters we used a uniform distributions and exponentiate them since we were interested in sparsity in logarithmic scale. Further we varied the range in within we sampled uniformly showing that the problem becomes quickly intractable if eigenvalues are (relatively) too close to the origin.
+Finally we needed to generate $b$ such that $\1^t b = 0$ so we just sampled each of $b$'s entries uniformly from an interval $[-rad_b, rad_b]$ (we will see later that $rad_b$ value does not affect our algorithm's performance) and then subtracted from $b$ its projection on $\langle \1 \rangle$. 
 
 \subsection{Comparison with Libraries}
 We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that my implementation works as  expected.

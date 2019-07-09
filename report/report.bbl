@@ -1,5 +1,11 @@
 \begin{thebibliography}{1}
 
+\bibitem{netgen}
+{\sc Klingman, D., Napier, A., and Stutz, J.}
+\newblock Netgen: A program for generating large scale capacitated assignment,
+  transportation, and minimum cost flow network problems.
+\newblock {\em Management Science 20}, 5 (1974), 814--821.
+
 \bibitem{trefethen97}
 {\sc Trefethen, L.~N., and Bau, D.}
 \newblock {\em Numerical Linear Algebra}.
