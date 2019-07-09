@@ -1,4 +1,3 @@
-
 #  Si dichiara che il contenuto di questo file e in ogni sua parte
 #  opera originale dell'autore.
 #
@@ -76,17 +75,20 @@ def my_cg(A, b, tol=1e-5, maxiter=None, callback=None):
     return x, 0
 
 
-def make_operator(edges, n):
+def make_operator(edges, D, n):
     ''' This function returns a LinearOperator object performing
     the product x -> E * D^-1 * E^t * x where E is the edge-node
-    matrix and D is the diagonal matrix encoding edges' weights.
+    matrix and D is a diagonal positive definite matrix.
 
     Parameters:
 
     edges: {list}
-        It is a list of triples (u, v, w) where u is the start
-        node, v the end node and w the quadratic weight associated.
+        It is a list of pairs (u, v) where u is the start node 
+        and v the end node.
 
+    D: {list, array}
+        It is the list of diagonal elements of matrix D.
+    
     n: {integer}
         It is the number of nodes, or equivalenty the dimention of
         the input and output spaces of the operator created.
@@ -96,7 +98,7 @@ def make_operator(edges, n):
     A: {LinearOperator}
         A is a LinearOperator performing x -> (E * D^-1 * E^t) * x.
     '''
-    edges = [(e[0], e[1], 1 / float(e[2])) for e in edges]
+    D = [1 / float(d) for d in D]  # performing divisions just once
     
     def matvec(x):
         ''' Fast matrix-vector multiplication exploiting the structure
@@ -104,107 +106,39 @@ def make_operator(edges, n):
         additions.
         '''
         res = np.zeros(len(x))
-        for e in edges:
-            diff = e[2] * (x[e[0]] - x[e[1]])
+        for e, d in zip(edges, D):
+            diff = d * (x[e[0]] - x[e[1]])
             res[e[0]] += diff
             res[e[1]] -= diff
 
         return res
 
     A = LinearOperator((n, n), matvec=matvec)
-    return A 
+    return A
 
+def precondition(edges, D, b):
+    n = len(b)
+    diag = [0] * n
+    for e, d in zip(edges, D):
+        d = 1 / float(d)
+        diag[e[0]] += d
+        diag[e[1]] += d
 
-def get_primal(edges, x):
-    ''' This function reconstruct primal solution given the dual one.
-    Basically it solves f^t * D = x * E that is the KKT-G condition.
+    A = make_operator(edges, D, n)
 
-    Parameters:
-    
-    edges: {list}
-        It is a list of triples (u, v, w) where u is the start
-        node, v the end node and w the quadratic weight associated.
+    def matvec(x):
+        res = A * x
+        res = [r / d for r, d in zip(res, diag)]
+        return res
 
-    x: {array, matrix}
-        The dual solution.
-    '''
-    f = [(x[e[1]] - x[e[0]]) / e[2] for e in edges]
-    return np.array(f)
-
-
-def solve(edges, b, maxiter=None, tol=1e-5, algo=my_cg):
-    ''' This function solves uncapacited and undirected quadratic 
-    separable MCF, equivalent to the solution of the linear system 
-    
-    A * x = b,    with    A = E * D^-1 * E^t
-
-    where E is the edge-node matrix and D is the diagonal matrix
-    containing the edges' weights.
-
-    It is parametric in the algorithm used to solve that linear
-    system in order to compare different solutions.
-
-    Parameters:
-
-    edges: {list}
-        It is a list of triples (u, v, w) where u is the start
-        node, v the end node and w the quadratic weight associated.
-
-    b: {array, matrix}
-        Right hand side of the linear system. Has shape (N,) or (N,1).
-        It encodes the flow balance conditionds defining sinks and 
-        sources. 
-
-    Returns:
-
-    x: {array, matrix}
-        The converged dual solution, provided by linear solver.
-    
-    f: {array, matrix}
-        The primal solution (i.e. the optimal MCF).
-
-    itn: {integer}
-        Number of iteration required by the solver.
-    
-    tspan: {float}
-        Time required to solve the linear system.
-
-    info: {integer}
-        Provides linear solver convergence information:
-        0 : successful exit 
-        >0 : convergence not achieved, returns number of iterations
-
-    Other Parameters:
-
-    maxiter: {integer}
-        Maximum number of iterations for linear solver. Iteration 
-        will stop after maxiter steps even if the specified tolerance 
-        has not been achieved.
-
-    tol: {float}
-        Solver convergence condition is norm(residual) <= tol*norm(b).  
-    '''    
-    A = make_operator(edges, len(b))  # defining linear operator
-
-    itn = 0
-    def callback(xk):  # counting iterations
-        nonlocal itn
-        itn += 1
-
-    t0 = time.time()
-    x, info = algo(A, b, maxiter=maxiter, tol=tol, callback=callback)
-    t1 = time.time()
-    tspan = t1 - t0  # measuring elapsed time
-
-    f = get_primal(edges, x)
-
-    return x, f, itn, tspan, info
+    Apr = LinearOperator((n, n), matvec=matvec)
+    b = [z / d for z, d in zip(b, diag)]
+    return Apr, b
 
 
 def read_DIMACS(file_path):
-    ''' This method reads topology, costs and balance vector of an 
-    undirected graph form a file following the DIMACS Min-Cost flow 
-    conventions.
+    ''' This method reads the topology of a digraph form a file 
+    following the DIMACS Min-Cost flow conventions.
     
     Parameters:
 
@@ -215,38 +149,28 @@ def read_DIMACS(file_path):
     Returns:
 
     edges: {list}
-        It is a list of triples (u, v, w) where u is the start
-        node, v the end node and w the quadratic weight associated.
+        It is a list of triples (u, v) where u is the start node and 
+        v the end node.
+    
+    n: {integer}
+        It is the number of nodes in graph.
 
-    b: {array, matrix}
-        It encodes the flow balance conditionds defining sinks and 
-        sources.
     '''
     file = open(file_path, 'r')
     edges = []
+    line = file.readline()
     
-    while True:
-        line = file.readline()
-        if line == '':
-            break
-
-        if line[:1] == 'c':
-            continue
-
+    while line != '':
         if line[:1] == 'p':
             token = line.split()
-            n = int(token[2]) + 1
-            b = [0] * n
+            n = int(token[2])
             
-        if line[:1] == 'n':
-            token = line.split()
-            b[int(token[1])] = float(token[2])
-
         if line[:1] == 'a':
             token = line.split()
-            u = int(token[1])
-            v = int(token[2])
-            c = float(token[5])
-            edges.append((u, v, c))
+            u = int(token[1]) - 1
+            v = int(token[2]) - 1
+            edges.append((u, v))
 
-    return edges, b
+        line = file.readline()
+            
+    return edges, n

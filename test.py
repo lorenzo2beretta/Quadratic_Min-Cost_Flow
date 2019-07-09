@@ -47,9 +47,9 @@ def run(v1, v2):
                 run_experiment(file_path, j*10, v1, v2)
 
 
-def file_print(v, file_name):
+def file_print(v, file_path):
     v = [[w.__str__() for w in z ] for z in v]
-    with open(file_name, 'w') as writeFile:
+    with open(file_path, 'w') as writeFile:
         writer = csv.writer(writeFile)
         writer.writerows(v)
 
