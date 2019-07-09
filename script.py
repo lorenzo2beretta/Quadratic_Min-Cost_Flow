@@ -5,10 +5,11 @@ from scipy.sparse.linalg import cg
 from scipy.sparse.linalg import gmres
 
 ''' Generating problem's data. ''' 
+
 file_path = 'graph'
 edges, n = read_DIMACS(file_path)
 
-rad_D = 10
+rad_D = 50
 D = [np.exp(np.random.uniform(-rad_D, rad_D)) for e in edges]
 
 # trick to sample b s.t. np.ones(len(b))^t * b == 0
@@ -44,11 +45,12 @@ def run(A, b, algo, tol=1e-5, maxiter=1000, M=None):
 
     tspan = t1 - t0  # measuring elapsed time
     itn = len(res)   # counting iterations
-    acc = np.linalg.norm(A * x - b)
+    acc = np.linalg.norm(A * x - b) / np.linalg.norm(b)
     
     return x, acc, itn, tspan, res
 
 print( n, len(edges), rad_D, rad_b)
+
 
 # ---------------- COMPARISON -------------------
 
@@ -56,14 +58,17 @@ print( n, len(edges), rad_D, rad_b)
 x, acc, itn, tspan, res = run(A, b, my_cg)
 print('standard cg:', itn , tspan, acc)
 res = np.log(np.array(res))
+plt.title(r'$n$ = 500, $m$ = 20000, $rad_D$ = 50')
+plt.xlabel(r'$k$-th iteration')
+plt.ylabel(r'$\log\left(\left||r_k\right||_2\right)$')
 plt.plot(res)
-
+'''
 # preconditioned cg
 x, acc, itn, tspan, res = run(A, b, cg, M=M)
 print('preconditioned cg:', itn , tspan, acc)
 res = np.log(np.array(res))
 plt.plot(res)
-'''
+
 # standard GMRES
 x, acc, itn, tspan, res = run(A, b, gmres)
 print('standard GMRES:', itn , tspan, acc)
@@ -80,14 +85,13 @@ plt.plot(res)
 plt.show()  # show plots
 
 
-
-
-
-
+'''
 
 # eigenvalues plot
-'''
+
 M = A * np.identity(n)
+
+# Questo serve per giustificare l'uso di Jacobi
 
 diag = [M[i][i] for i in range(n)]
 
@@ -95,19 +99,21 @@ diag.sort()
 diag = np.log(diag)
 plt.plot(diag)
 plt.show()
-'''
 
-'''
+
 eig = np.linalg.eigvals(M)
 
 
 eig = [np.linalg.norm(e) for e in eig]
 eig.sort()
-print(eig[0:40])
+# print(eig[0:40])
 
 eig = np.log(eig)
 plt.plot(eig)
+plt.xlabel(r'$i$-th eigenvalue')
+plt.ylabel(r'$\log\left(\left|\lambda_i\right|\right)$')
+plt.title('Density = 10%, $rad_D$ = 100')
 plt.show()
-'''
 
-    
+
+'''    

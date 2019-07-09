@@ -132,12 +132,30 @@ In order to perform the experiments we needed to generate three objects: the mat
 As far as network generation is concerned we used the standard MCF instance generator \texttt{netgen}\footnote{See Klingman {\em et al.} \cite{netgen}} retrieved at \href{https://github.com/emmanuj/netgen}{https://github.com/emmanuj/netgen} as a C version.
 This generator made it possible to vary number of nodes and arc density so that we could test our algorithm over several examples.
 
-Since eigenvalues distribution plays a key role in iterative algorithms' convergence rate and, as stated in the previous section, this holds especially for CG, we deemed the distribution of $D$-eigenvalues as a critical parameter to study experimentally. Trying to figure out a meaningful parametrized distribution to sample from we found that, given the CG convergence rate as a function of $\kappa =  \frac{\lambda_{max}}{\lambda_{min}}$ it would have been nice to have $E^t D^{-1} E$ eigenvalues $0$-symmetrically distributed in logarithmic scale. Although the distribution of $E^t D^{-1} E$ eigenvalues cannot be simply inferred form the one of $D$ (we will see this later in more details) we opted for sampling $D$'s entries exponentiating a r.v. uniformly distributed over $[-rad, rad]$.  
+Since eigenvalues distribution plays a key role in iterative algorithms' convergence rate and, as stated in the previous section, this holds especially for CG, we deemed the distribution of $D$-eigenvalues as a critical parameter to study experimentally. Trying to figure out a meaningful parametrized distribution to sample from we found that, given the CG convergence rate as a function of $\kappa =  \frac{\lambda_{max}}{\lambda_{min}}$ it would have been nice to have $E^t D^{-1} E$ eigenvalues $0$-symmetrically distributed in logarithmic scale. Although the distribution of $E^t D^{-1} E$ eigenvalues cannot be simply inferred form the one of $D$ (we will see this later in more details) we opted for sampling $D$'s entries exponentiating a r.v. uniformly distributed over $[-rad_D, rad_D]$.  
 
-Finally we needed to generate $b$ such that $\1^t b = 0$ so we just sampled each of $b$'s entries uniformly from an interval $[-rad_b, rad_b]$ (we will see later that $rad_b$ value does not affect our algorithm's performance) and then subtracted from $b$ its projection on $\langle \1 \rangle$. 
+Finally we needed to generate $b$ such that $\1^t b = 0$ so we just sampled each of $b$'s entries uniformly from an interval $[-rad_b, rad_b]$ and then subtracted from $b$ its projection on $\langle \1 \rangle$. We will see through experiments that $rad_b$ value does not affect our algorithm's performance. 
+
+\subsection{Eigenvalues Distribution}
+To grasp some informations about how does $E^t D^{-1} E$ eigenvalues vary while tuning $rad_D$ and the arc density of graph, we plotted the eigenvalues\footnote{Calculated with \texttt{numpy.linalg.eigvals}.} of a $100 \times 100$ matrix induced by a $100$-nodes graph generated as stated above. Please notice that eigenvalues' norm are in logarithmic scale.
+
+\includegraphics[scale=0.5, H]{eigen-100-10-100.png}
+\includegraphics[scale=0.5, H]{eigen-100-10-50.png}
+\includegraphics[scale=0.5, H]{eigen-100-90-100.png}
+\includegraphics[scale=0.5, H]{eigen-100-90-50.png}
+
+As you can see the matrices in the first row, having 10\% arc density, present much more evenly distributed eigenvalues and then we expect CG to have worse convergence on them. As we could easily expect widening up $rad_D$ condition number get worse. We will take this into account later employing a proper precondition while dealing with such matrices.  
+
+\subsection{CG Implementation Performance}
+Let us start with a couple of plots showing that our implementation works: the first one took 10.1 \textit{seconds} and achieved a relative error (i.e. $\frac{||Ax - b||_2}{||b||_2}$) of 8.3e-06 while the second took 16.2 \textit{seconds} attaining 8.9e-06 as relative error. 
+
+\includegraphics[scale=0.5, H]{my_cg-500-100000-100.png}
+\includegraphics[scale=0.5, H]{my_cg-500-20000-50.png}
+
+It is worth noting that, even if the former graph has both a twice wider $rad_D$ and 5 times more arcs than the latter, CG is clearly faster on the former both in terms of iterations and elapsed time. This is due, of course, to eigenvalues that, as showed above, are much more evenly distributed when the graph is dense. 
 
 \subsection{Comparison with Libraries}
-We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that my implementation works as  expected.
+We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that1 my implementation works as  expected.
 
 \subsection{Data}
 Experiments' data are available, two files in \texttt{.csv} format are attached. The file \texttt{data1} contains data regarding my own implementation while \texttt{data2} contains data produced by the scipy's method. They consist of several rows each one containing 4 columns: (\texttt{rad}, \texttt{itn}, \texttt{t}, \texttt{err}); \texttt{rad} is the radius of the range from which we extract uniformly random values to feed an exponential returning weights, \texttt{itn} is the number of iteration performed, \texttt{t} is the time elapsed and \texttt{err} is the relative error $||Ax - b||$.
@@ -146,9 +164,7 @@ Experiments' data are available, two files in \texttt{.csv} format are attached.
 \subsection{Convergence Rate}
 Here we observe the plot \texttt{rad}-\texttt{itn} showing how CG slow down when the starting matrix is ill conditioned, obtaining a substantial increase in the number of iterations once eigenvalues become sparser and sparser. 
 
-\begin{center}
-\includegraphics[scale=0.7, H]{rad-itn.png}
-\end{center}
+
 
 \subsection{Machine}
 All the experiment has been run on a an Intel i3-6006U CPU, x86\_64, 2.00GHz running Linux Debian 9.
