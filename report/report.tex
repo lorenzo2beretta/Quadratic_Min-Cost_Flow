@@ -173,6 +173,7 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
       Iterazioni  & 1290   & 457    & 357   & 93  \\
       \hline    
       Tempo       & 31.5 s & 14.8 s & 14.2 s & 5.8 s  \\
+       \hline    
     \end{tabular}}
 \end{center}
 \begin{center}
@@ -186,6 +187,7 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
       Iterazioni  & 81    & 139   & 548    & 1283   \\
       \hline    
       Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
+       \hline    
     \end{tabular}}
 \end{center}
 \begin{center}
@@ -199,6 +201,7 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
       Iterazioni  & 92   & 177  & 309   & 730   \\
       \hline    
       Tempo       & 2.9 s & 5.6 s & 10.2 s & 24.8 s  \\
+       \hline    
     \end{tabular}}
 \end{center}
 
@@ -220,23 +223,167 @@ In the following experiment we will sample $b$'s entries uniformly from $[-rad_b
       Iterazioni  & 126   & 129  & 119   & 130   \\
       \hline    
       Tempo       & 5.8 s & 6.2 s & 5.4 s & 5.7 s  \\
+      \hline    
     \end{tabular}}
 \end{center}
 
 
 \subsection{Preconditioning}
-When $E^t D^{-1} E$ is too ill conditioned to be dealt with it is a good strategy to try to find a matrix $M$ such that $M^{-1} A x = M^{-1} b$ is easily solvable and $M^{-1}A$ is less ill conditioned than $A$. This means basically that we are looking for an approximation $M$ of $A$ such that $M y = c$ is quickly solvable as a subroutine of our method.
+When $E^t D^{-1} E$ is too ill conditioned to be dealt with it is a good strategy to try to find a matrix $M$ such that $M y = c$ is easily solvable and $M^{-1}A$ is less ill conditioned than $A$.
+It is reasonable\footnote{According to Demmel\cite{demmel}.}, if diagonal entries vary a lot, to employ the Jacobi preconditioner that is to define $M = diag(A)$.
 
-It is reasonable, if diagonal entries vary a lot\footnote{According to Demmel\cite{demmel}.}, to employ the Jacobi preconditioner that is to define $M = diag(A)$.
+To show that diagonal entries actually vary a lot let us plot their norm for a matrix $A$ generated from a sparse graph, in particular setting $n = 100$, $m = 500$ and $rad_D = 50$.
+\begin{center}
+\includegraphics[scale=0.7, H]{diag-100-500-50.png}
+\end{center}
 
-In the following experiments we employed this preconditioner successfully improving significantly CG speed. Often we find ourselves unable to even get a result from the non-preconditioned version while solving it with the preconditioned one, here we stick to list experiments in which we managed to get a result from both.
+In the following experiments we employed Jacobi preconditioner to improve CG speed. We kept $n = 100$ and $rad_D = 50$ constant and let $m$ vary\footnote{We were not able to compare the algorithms applied on the plotted matrix (i.e. $m=500$) since just the preconditioned one terminates on such a ill conditioned matrix.} so that we are able to notice again the effect of sparsity on conditioning and how precondition deals successfully with that.
+
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+ Non-Preconditioned :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $m =$  & 1000   & 1500 & 4000  \\
+      \hline
+      \hline
+      Iterazioni  & 2383   & 498  & 122    \\
+      \hline    
+      Tempo       & 3.7 s & 1.2 s & 0.9 s   \\
+       \hline    
+    \end{tabular}}
+\end{minipage}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+Preconditioned :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $m =$  & 1000   & 1500 & 4000  \\
+      \hline
+      \hline
+      Iterazioni  & 111   & 80  & 35    \\
+      \hline    
+      Tempo       & 0.3 s & 0.3 s & 0.3 s   \\
+      \hline    
+    \end{tabular}}
+\end{minipage}
+\end{center}
 
 
- 
+Then we repeated the experiment setting $n = 100$, $m = 4000$ and letting $rad_D$ vary in order increase progressively the condition number.
 
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+ Non-Preconditioned :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 100   & 150 & 200  \\
+      \hline
+      \hline
+      Iterazioni  & 281   & 455  & 1804    \\
+      \hline    
+      Tempo       & 1.9 s & 2.8 s & 12.7 s   \\
+       \hline    
+    \end{tabular}}
+\end{minipage}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+Preconditioned :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 100   & 150 & 200  \\
+      \hline
+      \hline
+      Iterazioni  & 84   & 78  & 116    \\
+      \hline    
+      Tempo       & 0.7 s & 0.7 s & 1.1 s   \\
+      \hline    
+    \end{tabular}}
+\end{minipage}
+\end{center}
+
+Finally this is a logarithmic scale plot of residual per iteration comparing preconditioned (yellow) and non-preconditioned (blue) CG over a matrix originated from a sparse graph:
+
+\begin{center}
+\includegraphics[scale=0.7, H]{prec-or-not.png}
+\end{center}
+
+\subsection{Off-the-Shelf Solver Comparison}
+In this section we will compare our implementation of CG with an off-the-shelf solver from \texttt{scipy}: \texttt{gmres} a sparse linear system solver that implement the well known GMRES algorithm. Again we should take care that the stopping criterion makes the comparison fair, even though we set the same tolerance factor for both algorithms, it is not sufficient to guarantee fairness since they calculate residuals in different ways. However it is possible to ensure fairness through  an a posteriori assessment of their relative precision $\left(\text{i.e.} \frac{||Ax - b||_2}{||b||_2}\right)$ revealing that \texttt{my\_cg} is more precise (10\% on average) and that it is sufficient to prove that \texttt{my\_cg} outperforms \texttt{gmres}.
+
+Let us compare \texttt{my\_cg} with \texttt{gmres} fixing the topology, we will keep $n = 500$ and $m = 100000$ and move $rad_D$.
+
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+ \texttt{my\_cg} :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 50 & 100   & 150  \\
+      \hline
+      \hline
+      Iterazioni  & 39   & 72  & 131    \\
+      \hline    
+      Tempo       & 5.8 s & 10.9 s & 20.2 s   \\
+       \hline    
+    \end{tabular}}
+\end{minipage}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+\texttt{gmres} :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 50 & 100   & 150  \\
+      \hline
+      \hline
+      Iterazioni  & 50   & 150  & 275    \\
+      \hline    
+      Tempo       & 5.5 s & 16.1 s & 29.8 s   \\
+      \hline    
+    \end{tabular}}
+\end{minipage}
+\end{center}
+
+CG outperforms GMRES both in time and number of iterations, especially when the matrix get more and more ill conditioned. Let us now vary $m$ fixing other parameters.
+
+
+\begin{center}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+ \texttt{my\_cg} :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $m =$  & 30000 & 50000   & 100000  \\
+      \hline
+      \hline
+      Iterazioni  & 153   & 53  & 26    \\
+      \hline    
+      Tempo       & 8.4 s & 4.1 s & 3.9 s   \\
+       \hline    
+    \end{tabular}}
+\end{minipage}
+\begin{minipage}{0.45\textwidth}
+  \vbox{
+\texttt{gmres} :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 30000 & 50000   & 100000  \\
+      \hline
+      \hline
+      Iterazioni  & 356   & 79  & 27    \\
+      \hline    
+      Tempo       & 11.5 s & 4.3 s & 7.6 s   \\
+      \hline    
+    \end{tabular}}
+\end{minipage}
+\end{center}
+
+Again it turns out that GMRES stays competitive as far as the matrix is well conditioned, but as soon as things get nastier CG prevails.
 
 \section{Code}
-The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy} and \texttt{numpy} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has basically the same signature as the off-the-shelf solver and then they may be compared in a few lines of code. All the core functions are in \texttt{cg.py} while \texttt{test.py} contains only methods to automate experimentation.
+The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy}, \texttt{numpy} and \texttt{matplotlib} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has almost the same signature as the off-the-shelf solver and then they may be interchanged most of the time. All the core functions are in \texttt{cg.py} while \texttt{script.py} contains only methods to automate experimentation.
   
 \bibliographystyle{acm}  
 \bibliography{biblio}

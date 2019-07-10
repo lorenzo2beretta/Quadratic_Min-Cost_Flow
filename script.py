@@ -9,7 +9,7 @@ from scipy.sparse.linalg import gmres
 file_path = 'graph'
 edges, n = read_DIMACS(file_path)
 
-rad_D = 100
+rad_D = 50
 D = [np.exp(np.random.uniform(-rad_D, rad_D)) for e in edges]
 
 # trick to sample b s.t. np.ones(len(b))^t * b == 0
@@ -25,7 +25,7 @@ M = make_jacobi_prec(edges, D, n)  # defining Jacobi preconditioner
 
 ''' Setting custom parameters '''
 
-def run(A, b, algo, tol=1e-5, maxiter=2000, M=None):
+def run(A, b, algo, tol=1e-5, maxiter=10000, M=None):
     res = []
     if algo == gmres:
         def callback(rk):
@@ -58,23 +58,25 @@ print( n, len(edges), rad_D, rad_b)
 x, acc, itn, tspan, res = run(A, b, my_cg)
 print('standard cg:', itn , tspan, acc)
 res = np.log(np.array(res))
-plt.title(r'$n$ = '+str(n)+' $m$ = '+str(len(edges))+' $rad_D$ = '+str(rad_D))
+plt.title(r'$n$ = '+str(n)+' $, m$ = '+str(len(edges))+' $, rad_D$ = '+str(rad_D))
 plt.xlabel(r'$k$-th iteration')
 plt.ylabel(r'$\log\left(\left||r_k\right||_2\right)$')
 plt.plot(res)
+
 '''
 # preconditioned cg
 x, acc, itn, tspan, res = run(A, b, cg, M=M)
 print('preconditioned cg:', itn , tspan, acc)
 res = np.log(np.array(res))
 plt.plot(res)
+'''
 
 # standard GMRES
 x, acc, itn, tspan, res = run(A, b, gmres)
 print('standard GMRES:', itn , tspan, acc)
 res = np.log(np.array(res))
 plt.plot(res)
-
+'''
 # preconditioned GMRES
 x, acc, itn, tspan, res = run(A, b, gmres, M=M)
 print('preconditioned GMRES:', itn , tspan, acc)
@@ -85,8 +87,8 @@ plt.plot(res)
 # plt.show()  # show plots
 
 
-'''
 
+'''
 # eigenvalues plot
 
 M = A * np.identity(n)
@@ -98,6 +100,9 @@ diag = [M[i][i] for i in range(n)]
 diag.sort()
 diag = np.log(diag)
 plt.plot(diag)
+plt.xlabel(r'$i$-th diagonal entry')
+plt.ylabel(r'$\log\left(\left|A_{i, i}\right|\right)$')
+plt.title('Norm of $A$\' diagonal entries')
 plt.show()
 
 
