@@ -350,34 +350,32 @@ CG outperforms GMRES both in time and number of iterations, especially when the 
 
 
 \begin{center}
-\begin{minipage}{0.45\textwidth}
   \vbox{
  \texttt{my\_cg} :\\
     \begin{tabular}{| l | l | l | l | l |}
       \hline
-      $m =$  & 30000 & 50000   & 100000  \\
+      $m =$ &25000  & 30000 & 50000   & 100000  \\
       \hline
       \hline
-      Iterazioni  & 153   & 53  & 26    \\
+      Iterazioni & 193 & 153   & 53  & 26    \\
       \hline    
-      Tempo       & 8.4 s & 4.1 s & 3.9 s   \\
+      Tempo      & 7.9 & 7.4 s & 4.1 s & 3.9 s   \\
        \hline    
     \end{tabular}}
-\end{minipage}
-\begin{minipage}{0.45\textwidth}
   \vbox{
-\texttt{gmres} :\\
-    \begin{tabular}{| l | l | l | l | l |}
+  \end{center}
+  \begin{center}
+    \texttt{gmres} :\\
+    \begin{tabular}{| l| l | l | l | l | l |}
       \hline
-      $rad_D =$  & 30000 & 50000   & 100000  \\
+      $rad_D =$ &25000 & 30000 & 50000   & 100000  \\
       \hline
       \hline
-      Iterazioni  & 356   & 79  & 27    \\
+      Iterazioni &715 & 356   & 79  & 27    \\
       \hline    
-      Tempo       & 11.5 s & 4.3 s & 7.6 s   \\
+      Tempo      &19.2 & 11.5 s & 4.3 s & 7.6 s   \\
       \hline    
     \end{tabular}}
-\end{minipage}
 \end{center}
 
 Again it turns out that GMRES stays competitive as far as the matrix is well conditioned, but as soon as things get nastier CG prevails.

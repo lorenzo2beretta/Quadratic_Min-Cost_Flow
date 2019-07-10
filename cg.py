@@ -115,29 +115,32 @@ def make_operator(edges, D, n):
 
     A = LinearOperator((n, n), matvec=matvec)
     return A
-'''
-def precondition(edges, D, b):
-    n = len(b)
-    diag = [0] * n
-    for e, d in zip(edges, D):
-        d = 1 / float(d)
-        diag[e[0]] += d
-        diag[e[1]] += d
 
-    diag = [1 / d for d in diag]
-    A = make_operator(edges, D, n)
-
-    def matvec(x):
-        res = A * x
-        res = [r * d for r, d in zip(res, diag)]
-        return res
-
-    Apr = LinearOperator((n, n), matvec=matvec)
-    b = [z * d for z, d in zip(b, diag)]
-    return Apr, b
-'''
 
 def make_jacobi_prec(edges, D, n):
+    ''' This function returns a LinearOperator object performing
+    the product x -> diag(E * D^-1 * E^t) * x where E is the edge-node
+    matrix and D is a diagonal positive definite matrix. It is the
+    Jacobi preconditioner associated to the matrix E * D^-1 * E^t. 
+
+    Parameters:
+
+    edges: {list}
+        It is a list of pairs (u, v) where u is the start node 
+        and v the end node.
+
+    D: {list, array}
+        It is the list of diagonal elements of matrix D.
+    
+    n: {integer}
+        It is the number of nodes, or equivalenty the dimention of
+        the input and output spaces of the operator created.
+
+    Returns:
+
+    M: {LinearOperator}
+        M is the Jacobi preconditioner associated to E * D^-1 * E^t.
+    '''
     prec = [0] * n
     for e, d in zip(edges, D):
         d = 1 / float(d)

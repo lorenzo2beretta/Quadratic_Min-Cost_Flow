@@ -4,27 +4,27 @@ import matplotlib.pyplot as plt
 from scipy.sparse.linalg import cg
 from scipy.sparse.linalg import gmres
 
-''' Generating problem's data. ''' 
-
+''' Generating problem's topology ''' 
 file_path = 'graph'
 edges, n = read_DIMACS(file_path)
 
+''' Generating matrix D '''
 rad_D = 50
 D = [np.exp(np.random.uniform(-rad_D, rad_D)) for e in edges]
 
-# trick to sample b s.t. np.ones(len(b))^t * b == 0
+''' Generating vector b '''
 rad_b = 10
 b = [np.random.uniform(-rad_b, rad_b) for i in range (n)]
 proj = np.ones(n)
 proj *= np.dot(proj, b) / n
 b -= proj
 
+''' Creating E * D^{-1} * E^t operator and its preconditioner '''
 A = make_operator(edges, D, n)  # defining linear operator
 M = make_jacobi_prec(edges, D, n)  # defining Jacobi preconditioner
 
 
-''' Setting custom parameters '''
-
+''' Function to call while executing experiments '''
 def run(A, b, algo, tol=1e-5, maxiter=10000, M=None):
     res = []
     if algo == gmres:
@@ -50,6 +50,8 @@ def run(A, b, algo, tol=1e-5, maxiter=10000, M=None):
     return x, acc, itn, tspan, res
 
 print( n, len(edges), rad_D, rad_b)
+
+''' Some random code used for experiments follows '''
 
 
 # ---------------- COMPARISON -------------------
