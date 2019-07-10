@@ -126,6 +126,8 @@ Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast converg
 
 
 \section{Experiments}
+In this section we will describe a series of experiments challenging our implementation of CG feeding it with a dataset tailored to push it to the theoretical limits proven so far. We will first describe how to generate the dataset, then we will deal with a tough question: how does $D \mapsto E^t D^{-1} E$ affect eigenvalues distribution? Finally we will show that our implementation works and compare it with off-the-shelf sparse linear solvers with and without precondition.
+
 \subsection{Data Generation}
 In order to perform the experiments we needed to generate three objects: the matrix $E\in \R^{n\times m}$ (equivalent to generate a digraph's topology), the diagonal positive definite matrix $D\in\R^{m\times m$ and the vector $b\in\R^n$.
   
@@ -147,12 +149,48 @@ To grasp some informations about how does $E^t D^{-1} E$ eigenvalues vary while 
 As you can see the matrices in the first row, having 10\% arc density, present much more evenly distributed eigenvalues and then we expect CG to have worse convergence on them. As we could easily expect widening up $rad_D$ condition number get worse. We will take this into account later employing a proper precondition while dealing with such matrices.  
 
 \subsection{CG Implementation Performance}
-Let us start with a couple of plots showing that our implementation works: the first one took 10.1 \textit{seconds} and achieved a relative error (i.e. $\frac{||Ax - b||_2}{||b||_2}$) of 8.3e-06 while the second took 16.2 \textit{seconds} attaining 8.9e-06 as relative error. 
+From now on we will show results of experiments consisting of iterative methods solving linear systems, then our main benchmark parameters will be the number of iteration and the time elapsed (experiments have been run on a single machine
+\footnote{Intel i3-6006U CPU, x86\_64, 2.00GHz running Linux Debian 9.}). In order to make different solvers comparable we set a uniform stopping criterion halting the iteration loop as soon as the residual norm divided by $||b||_2$ falls below a fixed amount (default is $1e-05$).
+
+Let us start with a couple of plots showing that our implementation works: the first one took 10.1 \textit{seconds} and achieved a relative error $\left(\text{i.e.} \frac{||Ax - b||_2}{||b||_2}\right)$ of 8.3e-06 while the second took 16.2 \textit{seconds} attaining 8.9e-06 as relative error. 
 
 \includegraphics[scale=0.5, H]{my_cg-500-100000-100.png}
 \includegraphics[scale=0.5, H]{my_cg-500-20000-50.png}
 
-It is worth noting that, even if the former graph has both a twice wider $rad_D$ and 5 times more arcs than the latter, CG is clearly faster on the former both in terms of iterations and elapsed time. This is due, of course, to eigenvalues that, as showed above, are much more evenly distributed when the graph is dense. 
+It is worth noting that, even if the former graph has both a twice wider $rad_D$ and 5 times more arcs than the latter, CG is clearly faster on the former both in terms of iterations and elapsed time. This is due, of course, to eigenvalues that, as showed above, are much more evenly distributed
+when the graph is dense. 
+
+In the following tables we report more experiments conducted on \texttt{my\_cg}, our own implementation of CG. We will vary one of $n$, $m$ and $rad_D$ at a time keeping the others fixed.
+
+\begin{center}
+  \vbox{
+ $rad_D = 100$, $m = 20000$ :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      Nodi ($n$)  & 150   & 200   & 300    & 400  \\
+      \hline
+      \hline
+      Iterazioni  & 81    & 139   & 548    & 1283   \\
+      \hline    
+      Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
+    \end{tabular}}
+\end{center}
+
+
+\begin{center}
+  \vbox{
+ $rad_D = 100$, $m = 20000$ :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      Nodi ($n$)  & 150   & 200   & 300    & 400  \\
+      \hline
+      \hline
+      Iterazioni  & 81    & 139   & 548    & 1283   \\
+      \hline    
+      Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
+    \end{tabular}}
+\end{center}
+
 
 \subsection{Comparison with Libraries}
 We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that1 my implementation works as  expected.
@@ -165,9 +203,6 @@ Experiments' data are available, two files in \texttt{.csv} format are attached.
 Here we observe the plot \texttt{rad}-\texttt{itn} showing how CG slow down when the starting matrix is ill conditioned, obtaining a substantial increase in the number of iterations once eigenvalues become sparser and sparser. 
 
 
-
-\subsection{Machine}
-All the experiment has been run on a an Intel i3-6006U CPU, x86\_64, 2.00GHz running Linux Debian 9.
 
 \section{Code}
 The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy} and \texttt{numpy} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has basically the same signature as the off-the-shelf solver and then they may be compared in a few lines of code. All the core functions are in \texttt{cg.py} while \texttt{test.py} contains only methods to automate experimentation.
