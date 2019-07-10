@@ -158,31 +158,29 @@ Let us start with a couple of plots showing that our implementation works: the f
 \includegraphics[scale=0.5, H]{my_cg-500-20000-50.png}
 
 It is worth noting that, even if the former graph has both a twice wider $rad_D$ and 5 times more arcs than the latter, CG is clearly faster on the former both in terms of iterations and elapsed time. This is due, of course, to eigenvalues that, as showed above, are much more evenly distributed
-when the graph is dense. 
+when the graph is dense preventing the polynomials of Theorem \ref{polap} to closely interpolate them. 
 
 In the following tables we report more experiments conducted on \texttt{my\_cg}, our own implementation of CG. We will vary one of $n$, $m$ and $rad_D$ at a time keeping the others fixed.
 
 \begin{center}
   \vbox{
- $rad_D = 100$, $m = 20000$ :\\
+ $n = 300$, $rad_D = 100$ :\\
     \begin{tabular}{| l | l | l | l | l |}
       \hline
-      Nodi ($n$)  & 150   & 200   & 300    & 400  \\
+      $m =$       & 1500   & 20000  & 25000   & 40000  \\
       \hline
       \hline
-      Iterazioni  & 81    & 139   & 548    & 1283   \\
+      Iterazioni  & 1290   & 457    & 357   & 93  \\
       \hline    
-      Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
+      Tempo       & 31.5 s & 14.8 s & 14.2 s & 5.8 s  \\
     \end{tabular}}
 \end{center}
-
-
 \begin{center}
   \vbox{
  $rad_D = 100$, $m = 20000$ :\\
     \begin{tabular}{| l | l | l | l | l |}
       \hline
-      Nodi ($n$)  & 150   & 200   & 300    & 400  \\
+      $n =$  & 150   & 200   & 300    & 400  \\
       \hline
       \hline
       Iterazioni  & 81    & 139   & 548    & 1283   \\
@@ -190,18 +188,51 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
       Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
     \end{tabular}}
 \end{center}
+\begin{center}
+  \vbox{
+ $n = 250$, $m = 20000$ :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_D =$  & 50   & 75 & 100   & 150  \\
+      \hline
+      \hline
+      Iterazioni  & 92   & 177  & 309   & 730   \\
+      \hline    
+      Tempo       & 2.9 s & 5.6 s & 10.2 s & 24.8 s  \\
+    \end{tabular}}
+\end{center}
+
+Again these data show that the sparser is the graph the slower is CG, in fact adding arcs fasten up the algorithm significantly. Moreover as expected sampling $D$'s entries from a wider interval yields a worse conditioned matrix and then a slower CG. Once sen the first two tables the third one is not very surprising, indeed augmenting $n$ not only make the graph sparser but increases the size of linear system.  
+
+\subsection{Distribution of $b$}
+As stated in the theoretical part of this report, the choice of $b$ does not affect the convergence rate. Although it could be a legit question to ask whether the choice of $b$ significantly impacts the number of iteration or elapsed time. We will briefly show experimentally that this is not the case and that we do not need to bother with its distribution while comparing methods.
+
+In the following experiment we will sample $b$'s entries uniformly from $[-rad_b, rad_b]$ and then orthogonalize it with respect to $\1$. We will show that CG performance is independent from $rad_b$.
+
+\begin{center}
+  \vbox{
+ $n = 200$, $m = 20000$, $rad_D = 100$ :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $rad_b =$  & 1   & 10 & 100   & 1000  \\
+      \hline
+      \hline
+      Iterazioni  & 126   & 129  & 119   & 130   \\
+      \hline    
+      Tempo       & 5.8 s & 6.2 s & 5.4 s & 5.7 s  \\
+    \end{tabular}}
+\end{center}
 
 
-\subsection{Comparison with Libraries}
-We compared the home-brewed function \texttt{my\_cg} with \texttt{scipy.sparse.linalg.cg}. We found out that our algorithm is slightly better than the scipy's implementation: it took on average 0.14 less iterations and 1.7\% less time to converge achieving a better error on $||Ax - b||$ (6.77e-6 against 6.90e-6). Although not impressive this results shows that1 my implementation works as  expected.
+\subsection{Preconditioning}
+When $E^t D^{-1} E$ is too ill conditioned to be dealt with it is a good strategy to try to find a matrix $M$ such that $M^{-1} A x = M^{-1} b$ is easily solvable and $M^{-1}A$ is less ill conditioned than $A$. This means basically that we are looking for an approximation $M$ of $A$ such that $M y = c$ is quickly solvable as a subroutine of our method.
 
-\subsection{Data}
-Experiments' data are available, two files in \texttt{.csv} format are attached. The file \texttt{data1} contains data regarding my own implementation while \texttt{data2} contains data produced by the scipy's method. They consist of several rows each one containing 4 columns: (\texttt{rad}, \texttt{itn}, \texttt{t}, \texttt{err}); \texttt{rad} is the radius of the range from which we extract uniformly random values to feed an exponential returning weights, \texttt{itn} is the number of iteration performed, \texttt{t} is the time elapsed and \texttt{err} is the relative error $||Ax - b||$.
+It is reasonable, if diagonal entries vary a lot\footnote{According to Demmel\cite{demmel}.}, to employ the Jacobi preconditioner that is to define $M = diag(A)$.
+
+In the following experiments we employed this preconditioner successfully improving significantly CG speed. Often we find ourselves unable to even get a result from the non-preconditioned version while solving it with the preconditioned one, here we stick to list experiments in which we managed to get a result from both.
 
 
-\subsection{Convergence Rate}
-Here we observe the plot \texttt{rad}-\texttt{itn} showing how CG slow down when the starting matrix is ill conditioned, obtaining a substantial increase in the number of iterations once eigenvalues become sparser and sparser. 
-
+ 
 
 
 \section{Code}

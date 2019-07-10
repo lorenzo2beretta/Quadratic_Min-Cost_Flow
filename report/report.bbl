@@ -1,5 +1,11 @@
 \begin{thebibliography}{1}
 
+\bibitem{demmel}
+{\sc Demmel, J.~W.}
+\newblock {\em Applied Numerical Linear Algebra}.
+\newblock Society for Industrial and Applied Mathematics, Philadelphia, PA,
+  USA, 1997.
+
 \bibitem{netgen}
 {\sc Klingman, D., Napier, A., and Stutz, J.}
 \newblock Netgen: A program for generating large scale capacitated assignment,
