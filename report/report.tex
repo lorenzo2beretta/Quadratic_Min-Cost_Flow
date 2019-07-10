@@ -24,7 +24,7 @@
 \title{Conjugate Gradient for \\ Quadratic Minimum-Cost Flow}
 \author{Lorenzo Beretta, \texttt{loribere@gmail.com}
   \and Project NoML-13 of C.M. course, C.S. department, UniPi}
-\date{3rd July 2019}
+\date{9th July 2019}
 
 \begin{document}
 \maketitle
@@ -61,7 +61,7 @@ Our main reference for this method is the book of Trefethen {\em et al.} \cite{t
 Of course the algorithm converges to one of the infinite solutions of the system if $rk(A) < n$ and in particular it converges to $x_*$ such that $\1^t x_* = 0$, indeed $Ker(E^t D^{-1} E) = \langle \1 \rangle$.
 
 \subsection{Algorithm}
-In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is actually repeated until a suitable convergence error is achieved\footnote{In our implementation we emulated the scipy's CG criterion, stopping as soon as $\frac{||r_n||_2}{ ||b||_2}$ falls below a fixed threshold.}.
+In the following algorithm $x_n$ is the approximate solution at step $n$ and the cycle is repeated until a suitable convergence error is achieved\footnote{In our implementation we emulated the scipy's CG criterion, stopping as soon as $\frac{||r_n||_2}{ ||b||_2}$ falls below a fixed threshold.}.
 
 \vbox{
 \begin{algorithmic}[1]
@@ -116,7 +116,7 @@ $$\inf_{p \in P_n}\frac{||p(A) e_0||_A}{||e_0||_A} \leq \inf_{p \in P_n}\sqrt{\f
  Theorem \ref{polap} enhances theorem 38.3 of Trefethen {\em et al.} \cite{trefethen97} taking into account the singular case and showing that even in that case this bound doesn't degrade.
 
 \subsection{Rate of Convergence}
-The results above provide a better although trivial estimate for the ``exact method'' convergence time, in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates them.
+The results above provide a better although trivial estimate for the ``exact method'' convergence time, in fact if $A$ has $h$ nonzero different eigenvalues then after $h$ iterations RHS in the previous inequality is null since the polynomial perfectly interpolates eigenvalues.
 
 On the other hand a more technical result involving the iterative nature of the algorithm can be proven: given $A$'s condition number $\kappa = \frac{\lambda_{max}}{\lambda_{min}}$, where $\lambda_{max}$ and $\lambda_{min}$ are extremal eigenvalues, it holds that
 
@@ -126,10 +126,10 @@ Finally we may say that a ``good'' spectrum for $A$ (i.e. providing fast converg
 
 
 \section{Experiments}
-In this section we will describe a series of experiments challenging our implementation of CG feeding it with a dataset tailored to push it to the theoretical limits proven so far. We will first describe how to generate the dataset, then we will deal with a tough question: how does $D \mapsto E^t D^{-1} E$ affect eigenvalues distribution? Finally we will show that our implementation works and compare it with off-the-shelf sparse linear solvers with and without precondition.
+In this section we will describe a series of experiments. First we will describe how to generate the dataset. Then we will assess the correctness  and computational complexity of our implementation of CG feeding it with matrices large enough to guarantee, not only that it is correct, but that it has the right complexity. After that we will deal with a tough question: how does $D \mapsto E^t D^{-1} E$ affect eigenvalues distribution? In the end we will compare CG with its preconditioned version on the most difficult instances and at last we will compare CG with a GMRES off-the-shel flinear solver.
 
 \subsection{Data Generation}
-In order to perform the experiments we needed to generate three objects: the matrix $E\in \R^{n\times m}$ (equivalent to generate a digraph's topology), the diagonal positive definite matrix $D\in\R^{m\times m$ and the vector $b\in\R^n$.
+In order to perform the experiments we needed to generate three objects: the matrix $E\in \R^{n\times m}$ (equivalent to generate a digraph topology), the diagonal positive definite matrix $D\in\R^{m\times m$ and the vector $b\in\R^n$.
   
 As far as network generation is concerned we used the standard MCF instance generator \texttt{netgen}\footnote{See Klingman {\em et al.} \cite{netgen}} retrieved at \href{https://github.com/emmanuj/netgen}{https://github.com/emmanuj/netgen} as a C version.
 This generator made it possible to vary number of nodes and arc density so that we could test our algorithm over several examples.
@@ -139,7 +139,7 @@ Since eigenvalues distribution plays a key role in iterative algorithms' converg
 Finally we needed to generate $b$ such that $\1^t b = 0$ so we just sampled each of $b$'s entries uniformly from an interval $[-rad_b, rad_b]$ and then subtracted from $b$ its projection on $\langle \1 \rangle$. We will see through experiments that $rad_b$ value does not affect our algorithm's performance. 
 
 \subsection{Eigenvalues Distribution}
-To grasp some informations about how does $E^t D^{-1} E$ eigenvalues vary while tuning $rad_D$ and the arc density of graph, we plotted the eigenvalues\footnote{Calculated with \texttt{numpy.linalg.eigvals}.} of a $100 \times 100$ matrix induced by a $100$-nodes graph generated as stated above. Please notice that eigenvalues' norm are in logarithmic scale.
+To grasp some informations about how does $E^t D^{-1} E$ eigenvalues vary while tuning $rad_D$ and the arc density of graph, we plotted the eigenvalues\footnote{Calculated with \texttt{numpy.linalg.eigvals}.} of a $100 \times 100$ matrix induced by a $100$-nodes graph generated as stated above. Please notice that eigenvalues' norms are in logarithmic scale.
 
 \includegraphics[scale=0.5, H]{eigen-100-10-100.png}
 \includegraphics[scale=0.5, H]{eigen-100-10-50.png}
@@ -158,7 +158,7 @@ Let us start with a couple of plots showing that our implementation works: the f
 \includegraphics[scale=0.5, H]{my_cg-500-20000-50.png}
 
 It is worth noting that, even if the former graph has both a twice wider $rad_D$ and 5 times more arcs than the latter, CG is clearly faster on the former both in terms of iterations and elapsed time. This is due, of course, to eigenvalues that, as showed above, are much more evenly distributed
-when the graph is dense preventing the polynomials of Theorem \ref{polap} to closely interpolate them. 
+when the graph is sparse preventing the polynomials of Theorem \ref{polap} to closely interpolate them. 
 
 In the following tables we report more experiments conducted on \texttt{my\_cg}, our own implementation of CG. We will vary one of $n$, $m$ and $rad_D$ at a time keeping the others fixed.
 
@@ -178,20 +178,6 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
 \end{center}
 \begin{center}
   \vbox{
- $rad_D = 100$, $m = 20000$ :\\
-    \begin{tabular}{| l | l | l | l | l |}
-      \hline
-      $n =$  & 150   & 200   & 300    & 400  \\
-      \hline
-      \hline
-      Iterazioni  & 81    & 139   & 548    & 1283   \\
-      \hline    
-      Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
-       \hline    
-    \end{tabular}}
-\end{center}
-\begin{center}
-  \vbox{
  $n = 250$, $m = 20000$ :\\
     \begin{tabular}{| l | l | l | l | l |}
       \hline
@@ -204,13 +190,27 @@ In the following tables we report more experiments conducted on \texttt{my\_cg},
        \hline    
     \end{tabular}}
 \end{center}
+\begin{center}
+  \vbox{
+ $rad_D = 100$, $m = 20000$ :\\
+    \begin{tabular}{| l | l | l | l | l |}
+      \hline
+      $n =$  & 150   & 200   & 300    & 400  \\
+      \hline
+      \hline
+      Iterazioni  & 81    & 139   & 548    & 1283   \\
+      \hline    
+      Tempo       & 2.7 s & 9.4 s & 20.1 s & 46.3 s  \\
+       \hline    
+    \end{tabular}}
+\end{center}
 
-Again these data show that the sparser is the graph the slower is CG, in fact adding arcs fasten up the algorithm significantly. Moreover as expected sampling $D$'s entries from a wider interval yields a worse conditioned matrix and then a slower CG. Once sen the first two tables the third one is not very surprising, indeed augmenting $n$ not only make the graph sparser but increases the size of linear system.  
+Again these data show that the sparser is the graph the slower is CG, in fact adding arcs fasten up the algorithm significantly. Moreover as expected sampling $D$'s entries from a wider interval yields a worse conditioned matrix and then a slower CG. Once looked at the first two tables the third one is not very surprising, indeed augmenting $n$ not only make the graph sparser but increases the size of linear system.  
 
 \subsection{Distribution of $b$}
-As stated in the theoretical part of this report, the choice of $b$ does not affect the convergence rate. Although it could be a legit question to ask whether the choice of $b$ significantly impacts the number of iteration or elapsed time. We will briefly show experimentally that this is not the case and that we do not need to bother with its distribution while comparing methods.
+Since $b$ is employed only in initialization, the choice of $b$ cannot affect the convergence rate. Although it could be a legit question to ask whether the choice of $b$ significantly impacts the number of iteration or elapsed time, after all the starting point could have an impact. We will briefly show experimentally that this is not the case and that we do not need to bother with its distribution while comparing methods.
 
-In the following experiment we will sample $b$'s entries uniformly from $[-rad_b, rad_b]$ and then orthogonalize it with respect to $\1$. We will show that CG performance is independent from $rad_b$.
+In the following experiment we will sample $b$'s entries uniformly from $[-rad_b, rad_b]$ and then orthogonalize it with respect to $\1$. We will show that CG performance is almost independent from $rad_b$.
 
 \begin{center}
   \vbox{
@@ -229,8 +229,8 @@ In the following experiment we will sample $b$'s entries uniformly from $[-rad_b
 
 
 \subsection{Preconditioning}
-When $E^t D^{-1} E$ is too ill conditioned to be dealt with it is a good strategy to try to find a matrix $M$ such that $M y = c$ is easily solvable and $M^{-1}A$ is less ill conditioned than $A$.
-It is reasonable\footnote{According to Demmel\cite{demmel}.}, if diagonal entries vary a lot, to employ the Jacobi preconditioner that is to define $M = diag(A)$.
+When $E^t D^{-1} E$ is too ill conditioned to be dealt with using CG it is a good strategy to try to find a matrix $M$ such that $M y = c$ is easily solvable and $M^{-1}A$ is less ill conditioned than $A$.
+It is reasonable\footnote{According to Demmel\cite{demmel}.}, if diagonal entries vary a lot, to employ the Jacobi preconditioner that is defined as $M = diag(A)$.
 
 To show that diagonal entries actually vary a lot let us plot their norm for a matrix $A$ generated from a sparse graph, in particular setting $n = 100$, $m = 500$ and $rad_D = 50$.
 \begin{center}
@@ -271,7 +271,7 @@ Preconditioned :\\
 \end{center}
 
 
-Then we repeated the experiment setting $n = 100$, $m = 4000$ and letting $rad_D$ vary in order increase progressively the condition number.
+Then we repeated the experiment setting $n = 100$, $m = 4000$ and letting $rad_D$ vary.
 
 \begin{center}
 \begin{minipage}{0.45\textwidth}
@@ -378,7 +378,7 @@ CG outperforms GMRES both in time and number of iterations, especially when the 
     \end{tabular}}
 \end{center}
 
-Again it turns out that GMRES stays competitive as far as the matrix is well conditioned, but as soon as things get nastier CG prevails.
+Again it turns out that GMRES stays competitive as far as the matrix is well conditioned (i.e. as long as it is dense enough), but as soon as things get nastier CG prevails.
 
 \section{Code}
 The algorithm has been coded in \texttt{python 3.5} exploiting \texttt{scipy}, \texttt{numpy} and \texttt{matplotlib} libraries. Source code is well documented and it has been developed coherently with the \texttt{scipy} style so that \texttt{my\_cg} method has almost the same signature as the off-the-shelf solver and then they may be interchanged most of the time. All the core functions are in \texttt{cg.py} while \texttt{script.py} contains only methods to automate experimentation.
